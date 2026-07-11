@@ -88,17 +88,22 @@ export const parseGoogleMapsUrl = async (inputStr: string): Promise<ParsedMapDat
       console.warn('Dev server proxy unavailable, trying unshorten.me...');
     }
 
-    // 2. Try unshorten.me (highly reliable unshortening API for production redirects)
+    // 2. Try unshorten.me via AllOrigins CORS proxy (combines CORS compatibility with redirect-following)
     try {
-      const response = await fetch(`https://unshorten.me/json/${encodeURIComponent(url)}`);
+      const unshortenMeUrl = `https://unshorten.me/json/${encodeURIComponent(url)}`;
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(unshortenMeUrl)}`;
+      const response = await fetch(proxyUrl);
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.resolved_url) {
-          return parseLongGoogleMapsUrl(data.resolved_url, textFallback);
+        if (data.contents) {
+          const unshortenData = JSON.parse(data.contents);
+          if (unshortenData.success && unshortenData.resolved_url) {
+            return parseLongGoogleMapsUrl(unshortenData.resolved_url, textFallback);
+          }
         }
       }
     } catch (err) {
-      console.warn('Unshorten.me failed, trying AllOrigins html extraction...');
+      console.warn('Double proxy unshortener failed, trying AllOrigins HTML extraction...');
     }
 
     // 3. Try AllOrigins CORS proxy with HTML meta-tag parsing (fallback crawling)

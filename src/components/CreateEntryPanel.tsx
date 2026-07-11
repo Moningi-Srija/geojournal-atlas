@@ -252,7 +252,7 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
         setLng(Number(data.lng.toFixed(6)));
         setError('');
       } else {
-        setError('Location name imported, but coordinates could not be retrieved from this link. Please enter coordinates manually.');
+        setError('Location name imported! Note: Google blocks bot unshortening (maps.app.goo.gl) in production. To auto-import coordinates, copy the long expanded URL from your browser address bar instead, or enter coordinates manually.');
       }
       setMapsUrl('');
     } catch (err: any) {

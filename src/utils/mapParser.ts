@@ -75,8 +75,8 @@ export const parseGoogleMapsUrl = async (inputStr: string): Promise<ParsedMapDat
 
   // Handle shortened URLs (e.g. maps.app.goo.gl or goo.gl/maps)
   if (url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps') || url.includes('maps.google.com/url')) {
+    // 1. Try local dev server proxy (works in local development)
     try {
-      // Fetch via local dev server proxy middleware
       const response = await fetch(`/api/unshorten?url=${encodeURIComponent(url)}`);
       if (response.ok) {
         const data = await response.json();
@@ -85,7 +85,48 @@ export const parseGoogleMapsUrl = async (inputStr: string): Promise<ParsedMapDat
         }
       }
     } catch (err) {
-      console.warn('Dev server URL expansion failed, falling back to local text parsing:', err);
+      console.warn('Dev server proxy unavailable, trying unshorten.me...');
+    }
+
+    // 2. Try unshorten.me (highly reliable unshortening API for production redirects)
+    try {
+      const response = await fetch(`https://unshorten.me/json/${encodeURIComponent(url)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.resolved_url) {
+          return parseLongGoogleMapsUrl(data.resolved_url, textFallback);
+        }
+      }
+    } catch (err) {
+      console.warn('Unshorten.me failed, trying AllOrigins html extraction...');
+    }
+
+    // 3. Try AllOrigins CORS proxy with HTML meta-tag parsing (fallback crawling)
+    try {
+      const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.contents) {
+          const html = data.contents;
+          
+          // Extract og:url meta tag
+          const ogMatch = html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i) ||
+                          html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:url["']/i);
+          if (ogMatch) {
+            return parseLongGoogleMapsUrl(ogMatch[1], textFallback);
+          }
+          
+          // Search for coordinates directly in HTML content
+          const latLngMatch = html.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+          if (latLngMatch) {
+            const lat = parseFloat(latLngMatch[1]);
+            const lng = parseFloat(latLngMatch[2]);
+            return { lat, lng, locationName: textFallback || 'Imported Location' };
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('AllOrigins fallback failed.');
     }
 
     // Fall back to location name only

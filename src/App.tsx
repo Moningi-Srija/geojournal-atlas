@@ -173,7 +173,6 @@ function App() {
     <div className="relative w-full h-full" style={{ backgroundColor: '#030308', overflow: 'hidden' }}>
       
       {/* 1. Header Navigation Bar */}
-      {user && (
       <header
         className="glass-panel"
         style={{
@@ -269,7 +268,6 @@ function App() {
           </div>
         </div>
       </header>
-      )}
 
       {/* 2. Main 3D Globe Canvas view */}
       <main className="w-full h-full">

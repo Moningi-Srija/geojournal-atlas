@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Globe from 'react-globe.gl';
 import type { JournalEntry } from '../types';
+import { useAuth } from './AuthContext';
 
 interface GlobeViewProps {
   entries: JournalEntry[];
@@ -17,6 +18,7 @@ export const GlobeView: React.FC<GlobeViewProps> = ({
 }) => {
   const [globeReady, setGlobeReady] = useState(false);
   const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user } = useAuth();
 
   // Setup auto-rotation and idle detection
   useEffect(() => {
@@ -109,8 +111,10 @@ export const GlobeView: React.FC<GlobeViewProps> = ({
         htmlLng={(d: any) => d.lng}
         htmlElement={(d: any) => {
           const entry = d as JournalEntry;
+          const isMine = entry.authorId === user?.uid;
+          
           const container = document.createElement('div');
-          container.className = 'globe-marker-container';
+          container.className = `globe-marker-container ${isMine ? 'is-mine' : ''}`;
 
           const ring = document.createElement('div');
           ring.className = 'globe-marker-ring';

@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Compass, AlertCircle } from 'lucide-react';
+import { Plus, Compass, User as UserIcon, LogOut, Users } from 'lucide-react';
 import type { JournalEntry } from './types';
 import { GlobeView } from './components/GlobeView';
 import { Sidebar } from './components/Sidebar';
 import { CreateEntryPanel } from './components/CreateEntryPanel';
 import { EntryCard } from './components/EntryCard';
+import { AuthModal } from './components/AuthModal';
+import { SocialPanel } from './components/SocialPanel';
+import { LandingPage } from './components/LandingPage';
+import { ProfilePanel } from './components/ProfilePanel';
+import { useAuth } from './components/AuthContext';
+import { db } from './firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { fetchPins, savePin, deletePin as deletePinFirestore } from './utils/firestore';
 
 // Default initial entries to populate on first load so the app looks stunning immediately
 const INITIAL_ENTRIES: JournalEntry[] = [
@@ -57,99 +65,78 @@ function App() {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [quotaWarning, setQuotaWarning] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   
+  const { user, profile, logout } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSocialOpen, setIsSocialOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showOnlyMine, setShowOnlyMine] = useState(false);
+
   const globeRef = useRef<any>(null);
 
-  // Load entries on mount
+  // Fetch entries from Firestore
   useEffect(() => {
-    const saved = localStorage.getItem('geojournal_entries');
-    if (saved) {
+    const loadPins = async () => {
       try {
-        const parsed = JSON.parse(saved);
-        // Schema Migration: convert legacy 'photo' string property to the new 'photos' array property
-        const migrated = Array.isArray(parsed) 
-          ? parsed.map((entry: any) => {
-              if (entry.photo && (!entry.photos || entry.photos.length === 0)) {
-                const { photo, ...rest } = entry;
-                return { ...rest, photos: [photo] };
-              }
-              if (!entry.photos) {
-                return { ...entry, photos: [] };
-              }
-              
-              // Upgrade default entries to include multiple photos if they only have one
-              if (entry.id === 'kyoto-1' && entry.photos.length === 1) {
-                return { ...entry, photos: INITIAL_ENTRIES[0].photos };
-              }
-              if (entry.id === 'paris-1' && entry.photos.length === 1) {
-                return { ...entry, photos: INITIAL_ENTRIES[1].photos };
-              }
-              if (entry.id === 'nyc-1' && entry.photos.length === 1) {
-                return { ...entry, photos: INITIAL_ENTRIES[2].photos };
-              }
-
-              return entry;
-            })
-          : INITIAL_ENTRIES;
-        setEntries(migrated);
+        const cloudPins = await fetchPins(user?.uid, showOnlyMine);
+        // If not logged in and no pins, fall back to initial stunning entries just for demo
+        if (!user && cloudPins.length === 0) {
+          setEntries(INITIAL_ENTRIES);
+        } else {
+          setEntries(cloudPins);
+        }
       } catch (err) {
-        console.error('Failed to parse saved entries:', err);
-        setEntries(INITIAL_ENTRIES);
+        console.error('Failed to load pins from cloud:', err);
       }
-    } else {
-      // First time user: save defaults
-      setEntries(INITIAL_ENTRIES);
-      localStorage.setItem('geojournal_entries', JSON.stringify(INITIAL_ENTRIES));
-    }
-  }, []);
+    };
+    loadPins();
+  }, [user?.uid, showOnlyMine]);
 
-  // Check LocalStorage footprint when entries update
-  useEffect(() => {
-    if (entries.length === 0) return;
-    try {
-      const serialized = JSON.stringify(entries);
-      localStorage.setItem('geojournal_entries', serialized);
-      
-      // LocalStorage max is ~5MB. If serialized string exceeds 4MB, warn the user.
-      const sizeInMB = (serialized.length * 2) / 1024 / 1024; // UTF-16 strings use 2 bytes per character
-      if (sizeInMB > 4.0) {
-        setQuotaWarning(true);
-      } else {
-        setQuotaWarning(false);
-      }
-    } catch (err) {
-      console.error('Storage full or unavailable:', err);
-      alert('Local storage is full. Please delete some memories to save new ones.');
+  const handleSaveEntry = async (newEntryData: Omit<JournalEntry, 'id' | 'date'> & { id?: string; date?: number }) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
     }
-  }, [entries]);
 
-  const handleSaveEntry = (newEntryData: Omit<JournalEntry, 'id' | 'date'> & { id?: string; date?: number }) => {
-    if (newEntryData.id) {
+    const entryDataWithAuthor = {
+      ...newEntryData,
+      authorId: user.uid,
+    };
+
+    let savedEntry: JournalEntry;
+
+    if (entryDataWithAuthor.id) {
       // Editing existing entry
-      const updatedEntry: JournalEntry = {
-        ...newEntryData,
-        id: newEntryData.id,
-        date: newEntryData.date || Date.now(),
+      savedEntry = {
+        ...entryDataWithAuthor,
+        id: entryDataWithAuthor.id,
+        date: entryDataWithAuthor.date || Date.now(),
       } as JournalEntry;
-
-      setEntries((prev) =>
-        prev.map((entry) => (entry.id === newEntryData.id ? updatedEntry : entry))
-      );
-
-      // Update selected card details too
-      setSelectedEntry(updatedEntry);
     } else {
       // Creating new entry
-      const newEntry: JournalEntry = {
-        ...newEntryData,
+      savedEntry = {
+        ...entryDataWithAuthor,
         id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
         date: Date.now(),
       } as JournalEntry;
+    }
 
-      setEntries((prev) => [newEntry, ...prev]);
-      setSelectedEntry(newEntry);
+    try {
+      await savePin(savedEntry);
+      
+      // Update local UI state
+      setEntries((prev) => {
+        const exists = prev.find((e) => e.id === savedEntry.id);
+        if (exists) {
+          return prev.map((e) => (e.id === savedEntry.id ? savedEntry : e));
+        }
+        return [savedEntry, ...prev];
+      });
+      setSelectedEntry(savedEntry);
+    } catch (err) {
+      console.error('Failed to save pin to cloud:', err);
+      alert('Failed to save to cloud.');
     }
   };
 
@@ -158,10 +145,27 @@ function App() {
     setEditingEntry(null);
   };
 
-  const handleDeleteEntry = (id: string) => {
-    setEntries((prev) => prev.filter((entry) => entry.id !== id));
-    if (selectedEntry?.id === id) {
-      setSelectedEntry(null);
+  const handleUpdateAvatar = async (url: string) => {
+    if (!user || !profile) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { photoURL: url });
+      // The profile state will automatically update via the snapshot listener in AuthContext
+    } catch (err) {
+      console.error('Failed to update avatar', err);
+    }
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    if (!user) return;
+    try {
+      await deletePinFirestore(id);
+      setEntries((prev) => prev.filter((entry) => entry.id !== id));
+      if (selectedEntry?.id === id) {
+        setSelectedEntry(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete from cloud:', err);
     }
   };
 
@@ -169,66 +173,102 @@ function App() {
     <div className="relative w-full h-full" style={{ backgroundColor: '#030308', overflow: 'hidden' }}>
       
       {/* 1. Header Navigation Bar */}
+      {user && (
       <header
         className="glass-panel"
         style={{
           position: 'absolute',
-          top: '20px',
-          right: '20px',
-          zIndex: 10,
-          padding: '12px 24px',
-          borderRadius: '14px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          top: '24px',
+          left: '24px',
+          right: '24px',
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '12px',
+          padding: '12px 24px',
+          zIndex: 10,
+          borderRadius: '100px',
         }}
       >
-        <div style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center' }}>
-          <Compass size={24} style={{ animation: 'spin 15s linear infinite' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center' }}>
+            <Compass size={24} style={{ animation: 'spin 15s linear infinite' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span
+              style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 800,
+                fontSize: '1.2rem',
+                letterSpacing: '0.05em',
+                background: 'linear-gradient(to right, #ffffff, var(--accent-cyan))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              GeoJournal
+            </span>
+            <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              3D Memory Atlas
+            </span>
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span
-            style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 800,
-              fontSize: '1.2rem',
-              letterSpacing: '0.05em',
-              background: 'linear-gradient(to right, #ffffff, var(--accent-cyan))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            GeoJournal
-          </span>
-          <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            3D Memory Atlas
-          </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {user && (
+            <div className="flex items-center gap-2 bg-white/5 p-1 rounded-lg border border-white/10 animate-in fade-in slide-in-from-right-4 duration-500">
+              <button 
+                onClick={() => setIsSocialOpen(true)}
+                className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors text-white/50 hover:text-white flex items-center gap-1"
+                title="Social Network"
+              >
+                <Users size={14} /> Social
+              </button>
+              <div className="w-px h-4 bg-white/10 mx-1"></div>
+              <button 
+                onClick={() => setShowOnlyMine(false)}
+                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${!showOnlyMine ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}
+              >
+                Feed
+              </button>
+              <button 
+                onClick={() => setShowOnlyMine(true)}
+                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${showOnlyMine ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}
+              >
+                My Pins
+              </button>
+            </div>
+          )}
+
+          {/* Auth Section */}
+          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-medium text-white">{profile?.displayName || 'Explorer'}</span>
+                  <span className="text-xs text-white/50">@{profile?.username}</span>
+                </div>
+                {profile?.photoURL ? (
+                  <img onClick={() => setIsProfileOpen(true)} src={profile.photoURL} alt="Profile" className="w-8 h-8 rounded-full border border-white/20 cursor-pointer hover:border-white transition-colors" />
+                ) : (
+                  <div onClick={() => setIsProfileOpen(true)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20 cursor-pointer hover:border-white transition-colors">
+                    <UserIcon size={16} className="text-white/70" />
+                  </div>
+                )}
+                <button onClick={logout} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all" title="Logout">
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setIsAuthModalOpen(true)}
+                className="glass-btn text-sm py-1.5 px-4 font-medium bg-white/5 hover:bg-white/10"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
         </div>
       </header>
-
-      {/* LocalStorage Quota warning */}
-      {quotaWarning && (
-        <div
-          className="glass-panel fade-in"
-          style={{
-            position: 'absolute',
-            top: '90px',
-            right: '20px',
-            zIndex: 10,
-            padding: '10px 16px',
-            maxWidth: '280px',
-            backgroundColor: 'rgba(245, 158, 11, 0.15)',
-            borderColor: 'rgba(245, 158, 11, 0.3)',
-            display: 'flex',
-            gap: '8px',
-            fontSize: '0.78rem',
-            color: '#fde047',
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0 }} />
-          <span>Storage quota almost full. Consider deleting older memories to preserve space.</span>
-        </div>
       )}
 
       {/* 2. Main 3D Globe Canvas view */}
@@ -241,8 +281,14 @@ function App() {
         />
       </main>
 
-      {/* 3. Left drawer entries list sidebar */}
-      <Sidebar
+      {!user && (
+        <LandingPage onGetStarted={() => setIsAuthModalOpen(true)} />
+      )}
+
+      {user && (
+        <>
+          {/* 3. Left drawer entries list sidebar */}
+          <Sidebar
         entries={entries}
         selectedEntry={selectedEntry}
         onSelectEntry={setSelectedEntry}
@@ -265,7 +311,13 @@ function App() {
 
       {/* 5. Floating action "+" button to trigger capture form */}
       <button
-        onClick={() => setIsCreateOpen(true)}
+        onClick={() => {
+          if (!user) {
+            setIsAuthModalOpen(true);
+            return;
+          }
+          setIsCreateOpen(true);
+        }}
         className="glass-btn glass-btn-primary"
         style={{
           position: 'absolute',
@@ -290,6 +342,25 @@ function App() {
         onSave={handleSaveEntry}
         editingEntry={editingEntry}
       />
+
+      {/* 8. Social Panel */}
+      <SocialPanel isOpen={isSocialOpen} onClose={() => setIsSocialOpen(false)} />
+        </>
+      )}
+
+      {/* 7. Auth Modal */}
+      {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} />}
+      
+      {/* 9. Profile Panel */}
+      {user && profile && (
+        <ProfilePanel 
+          isOpen={isProfileOpen} 
+          onClose={() => setIsProfileOpen(false)} 
+          profile={profile}
+          onUpdateAvatar={handleUpdateAvatar}
+        />
+      )}
+
     </div>
   );
 }

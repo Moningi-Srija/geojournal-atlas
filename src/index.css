@@ -196,6 +196,17 @@ body {
   box-shadow: 0 0 15px var(--accent-cyan);
 }
 
+/* My Pins styling */
+.globe-marker-container.is-mine .globe-marker-ring {
+  border: 2px solid var(--accent-purple);
+  box-shadow: 0 0 15px var(--accent-purple);
+}
+
+.globe-marker-container.is-mine:hover .globe-marker-thumbnail {
+  border-color: #f472b6;
+  box-shadow: 0 0 15px #f472b6;
+}
+
 /* Keyframe animations */
 @keyframes marker-pulse {
   0% {
@@ -206,6 +217,10 @@ body {
     transform: scale(1.5);
     opacity: 0;
   }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .fade-in {
@@ -229,6 +244,23 @@ body {
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@keyframes fallDown {
+  0% { 
+    transform: translateY(-10vh) rotate(0deg); 
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 0.2; 
+  }
+  90% { 
+    opacity: 0.2; 
+  }
+  100% { 
+    transform: translateY(110vh) rotate(360deg); 
+    opacity: 0; 
   }
 }
 
@@ -265,3 +297,38 @@ dialog.glass-panel {
 .z-10 { z-index: 10; }
 .z-20 { z-index: 20; }
 .overflow-y-auto { overflow-y: auto; }
+
+/* Modals & Panels */
+.modal-overlay {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  background-color: rgba(10, 15, 25, 0.95);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.side-panel {
+  position: fixed;
+  top: 0; bottom: 0; right: 0;
+  width: 100%;
+  max-width: 400px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}

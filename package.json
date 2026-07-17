@@ -10,12 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/leaflet": "^1.9.21",
     "firebase": "^12.16.0",
+    "globe.gl": "^2.46.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.24.0",
+    "maplibre-gl": "^4.7.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-firebase-hooks": "^5.1.1",
     "react-globe.gl": "^2.38.0",
+    "react-leaflet": "^5.0.0",
+    "react-map-gl": "^7.1.9",
     "three": "^0.185.1"
   },
   "devDependencies": {

@@ -23,6 +23,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       
       <FloatingIcons />
 
+      {/* Top right Sign In button */}
+      <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 20 }}>
+        <button 
+          onClick={onGetStarted}
+          className="glass-btn text-sm py-2 px-5 font-medium bg-white/5 hover:bg-white/10"
+        >
+          Sign In
+        </button>
+      </div>
+
       {/* Hero Content */}
       <div className="fade-in" style={{
         textAlign: 'center',

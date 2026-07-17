@@ -32,28 +32,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        // Fetch or create profile in Firestore
-        const profileRef = doc(db, 'users', currentUser.uid);
-        const profileSnap = await getDoc(profileRef);
-        
-        if (profileSnap.exists()) {
-          setProfile(profileSnap.data() as UserProfile);
-        } else {
-          // Create default profile for new user
-          const newProfile: UserProfile = {
-            uid: currentUser.uid,
-            email: currentUser.email || '',
-            displayName: currentUser.displayName || 'New Explorer',
-            username: `user_${currentUser.uid.substring(0, 5)}`,
-            photoURL: currentUser.photoURL || '',
-            bio: '',
-            isPrivate: true, // private by default per your request
-            followersCount: 0,
-            followingCount: 0,
-            createdAt: Date.now()
-          };
-          await setDoc(profileRef, newProfile);
-          setProfile(newProfile);
+        try {
+          // Fetch or create profile in Firestore
+          const profileRef = doc(db, 'users', currentUser.uid);
+          const profileSnap = await getDoc(profileRef);
+          
+          if (profileSnap.exists()) {
+            setProfile(profileSnap.data() as UserProfile);
+          } else {
+            // Create default profile for new user
+            const newProfile: UserProfile = {
+              uid: currentUser.uid,
+              email: currentUser.email || '',
+              displayName: currentUser.displayName || 'New Explorer',
+              username: `user_${currentUser.uid.substring(0, 5)}`,
+              photoURL: currentUser.photoURL || '',
+              bio: '',
+              isPrivate: true, // private by default per your request
+              followersCount: 0,
+              followingCount: 0,
+              createdAt: Date.now()
+            };
+            await setDoc(profileRef, newProfile);
+            setProfile(newProfile);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setProfile(null);
         }
       } else {
         setProfile(null);
@@ -77,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, logout, updateProfile }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Compass, User as UserIcon, LogOut, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Compass, User as UserIcon, LogOut, Users, List, MapPin } from 'lucide-react';
 import type { JournalEntry } from './types';
 import { GlobeView } from './components/GlobeView';
+import { LeafletMap } from './components/LeafletMap';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Sidebar } from './components/Sidebar';
 import { CreateEntryPanel } from './components/CreateEntryPanel';
 import { EntryCard } from './components/EntryCard';
@@ -67,13 +69,18 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   
-  const { user, profile, logout } = useAuth();
+  const { user, profile, loading, logout } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSocialOpen, setIsSocialOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showOnlyMine, setShowOnlyMine] = useState(false);
+  const [viewMode, setViewMode] = useState<'globe' | 'map'>(() => {
+    return (localStorage.getItem('geojournal_viewMode') as 'globe' | 'map') || 'globe';
+  });
 
-  const globeRef = useRef<any>(null);
+  useEffect(() => {
+    localStorage.setItem('geojournal_viewMode', viewMode);
+  }, [viewMode]);
 
   // Fetch entries from Firestore
   useEffect(() => {
@@ -169,12 +176,27 @@ function App() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#030308] text-white">
+        <div className="relative flex items-center justify-center mb-8">
+          <div className="absolute w-24 h-24 rounded-full border-2 border-white/20 animate-pulse-ring" style={{ animationDelay: '0s' }}></div>
+          <div className="absolute w-24 h-24 rounded-full border-2 border-white/20 animate-pulse-ring" style={{ animationDelay: '0.6s' }}></div>
+          <Compass size={56} className="animate-spin text-white/80" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Initializing GeoJournal</h2>
+        <p className="text-white/50 text-sm">Securing connection to satellite network...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full" style={{ backgroundColor: '#030308', overflow: 'hidden' }}>
       
       {/* 1. Header Navigation Bar */}
-      <header
-        className="glass-panel"
+      {user && (
+        <header
+          className="glass-panel"
         style={{
           position: 'absolute',
           top: '24px',
@@ -212,28 +234,47 @@ function App() {
           </div>
         </div>
 
+        {user && (
+          <div className="glass-panel" style={{ display: 'flex', padding: '4px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+            <button 
+              onClick={() => setViewMode('globe')}
+              className={`glass-btn ${viewMode === 'globe' ? 'glass-btn-primary' : ''}`}
+              style={{ padding: '6px 16px', fontSize: '0.85rem' }}
+            >
+              Globe
+            </button>
+            <button 
+              onClick={() => setViewMode('map')}
+              className={`glass-btn ${viewMode === 'map' ? 'glass-btn-primary' : ''}`}
+              style={{ padding: '6px 16px', fontSize: '0.85rem' }}
+            >
+              Map
+            </button>
+          </div>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {user && (
-            <div className="flex items-center gap-2 bg-white/5 p-1 rounded-lg border border-white/10 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-xl border border-white/10 animate-in fade-in slide-in-from-right-4 duration-500 backdrop-blur-md shadow-lg shadow-black/20">
               <button 
                 onClick={() => setIsSocialOpen(true)}
-                className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors text-white/50 hover:text-white flex items-center gap-1"
+                className="text-sm px-4 py-2 rounded-lg font-medium transition-all text-white/60 hover:text-white hover:bg-white/10 flex items-center gap-2"
                 title="Social Network"
               >
-                <Users size={14} /> Social
+                <Users size={16} /> Social
               </button>
-              <div className="w-px h-4 bg-white/10 mx-1"></div>
+              <div className="w-px h-6 bg-white/10 mx-1"></div>
               <button 
                 onClick={() => setShowOnlyMine(false)}
-                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${!showOnlyMine ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}
+                className={`text-sm px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${!showOnlyMine ? 'bg-white/15 text-white shadow-sm' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
               >
-                Feed
+                <List size={16} /> Feed
               </button>
               <button 
                 onClick={() => setShowOnlyMine(true)}
-                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${showOnlyMine ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}
+                className={`text-sm px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${showOnlyMine ? 'bg-white/15 text-white shadow-sm' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
               >
-                My Pins
+                <MapPin size={16} /> My Pins
               </button>
             </div>
           )}
@@ -267,16 +308,35 @@ function App() {
             )}
           </div>
         </div>
-      </header>
+        </header>
+      )}
 
-      {/* 2. Main 3D Globe Canvas view */}
+      {/* 2. Main 3D Globe / 2D Map Canvas view */}
       <main className="w-full h-full">
-        <GlobeView
-          entries={entries}
-          selectedEntry={selectedEntry}
-          onSelectEntry={setSelectedEntry}
-          globeRef={globeRef}
-        />
+        {viewMode === 'globe' ? (
+          <ErrorBoundary onError={(error) => {
+            let msg = '';
+            if (error instanceof Error) msg = error.message || '';
+            else if (typeof error === 'string') msg = error;
+            else if (error && typeof (error as any).message === 'string') msg = (error as any).message;
+            
+            if (msg.toLowerCase().includes('webgl')) {
+              setViewMode('map');
+            }
+          }}>
+            <GlobeView
+              entries={entries}
+              selectedEntry={selectedEntry}
+              onSelectEntry={setSelectedEntry}
+            />
+          </ErrorBoundary>
+        ) : (
+          <LeafletMap
+            entries={entries}
+            selectedEntry={selectedEntry}
+            onSelectEntry={setSelectedEntry}
+          />
+        )}
       </main>
 
       {!user && (

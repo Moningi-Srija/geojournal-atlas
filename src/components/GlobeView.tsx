@@ -1,146 +1,134 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import Globe from 'react-globe.gl';
+import type { GlobeMethods } from 'react-globe.gl';
 import type { JournalEntry } from '../types';
-import { useAuth } from './AuthContext';
 
 interface GlobeViewProps {
   entries: JournalEntry[];
   selectedEntry: JournalEntry | null;
   onSelectEntry: (entry: JournalEntry | null) => void;
-  globeRef: React.MutableRefObject<any>;
 }
 
-export const GlobeView: React.FC<GlobeViewProps> = ({
-  entries,
-  selectedEntry,
-  onSelectEntry,
-  globeRef,
-}) => {
-  const [globeReady, setGlobeReady] = useState(false);
-  const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
+export function GlobeView({ entries, selectedEntry, onSelectEntry }: GlobeViewProps) {
+  const globeRef = useRef<GlobeMethods>(null as unknown as GlobeMethods);
+  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Setup auto-rotation and idle detection
+  // Resize listener
   useEffect(() => {
-    if (!globeReady || !globeRef.current) return;
+    const handleResize = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight
+        });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    // Initial size
+    setTimeout(handleResize, 100);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-    const globeInstance = globeRef.current;
-    const controls = globeInstance.controls();
+  // Format data for the globe
+  const pinsData = useMemo(() => entries.map(entry => ({
+    lat: entry.lat,
+    lng: entry.lng,
+    title: entry.title,
+    color: entry.visibility === 'private' ? '#10b981' : '#3b82f6', // emerald-500 : blue-500
+    size: selectedEntry?.id === entry.id ? 1.5 : 1,
+    id: entry.id,
+    entry
+  })), [entries, selectedEntry]);
 
-    if (controls) {
-      controls.autoRotate = true;
-      controls.autoRotateSpeed = 0.5;
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-
-      const handleStart = () => {
-        // Pause auto-rotation when user starts interacting
-        controls.autoRotate = false;
-        if (idleTimeoutRef.current) {
-          clearTimeout(idleTimeoutRef.current);
-        }
-      };
-
-      const handleEnd = () => {
-        // Resume auto-rotation after 5 seconds of idle time
-        if (idleTimeoutRef.current) {
-          clearTimeout(idleTimeoutRef.current);
-        }
-        idleTimeoutRef.current = setTimeout(() => {
-          controls.autoRotate = true;
-        }, 5000);
-      };
-
-      controls.addEventListener('start', handleStart);
-      controls.addEventListener('end', handleEnd);
-
-      return () => {
-        controls.removeEventListener('start', handleStart);
-        controls.removeEventListener('end', handleEnd);
-        if (idleTimeoutRef.current) {
-          clearTimeout(idleTimeoutRef.current);
-        }
-      };
-    }
-  }, [globeReady, globeRef]);
-
-  // Handle flying to selected entry when it changes from the sidebar
+  // Focus on selected entry
   useEffect(() => {
-    if (!globeRef.current || !selectedEntry) return;
-
-    // Fly to coordinates with smooth camera animation
-    globeRef.current.pointOfView(
-      {
+    if (selectedEntry && globeRef.current) {
+      globeRef.current.pointOfView({
         lat: selectedEntry.lat,
         lng: selectedEntry.lng,
-        altitude: 1.8,
-      },
-      1800 // 1.8 seconds duration
-    );
-
-    // Temporarily pause auto-rotation so the camera locks on the selected pin
-    if (globeRef.current.controls()) {
-      const controls = globeRef.current.controls();
-      controls.autoRotate = false;
-      if (idleTimeoutRef.current) {
-        clearTimeout(idleTimeoutRef.current);
-      }
-      idleTimeoutRef.current = setTimeout(() => {
-        controls.autoRotate = true;
-      }, 8000); // Wait longer (8s) before resuming rotation after flying to a pin
+        altitude: 0.5
+      }, 1000); // 1s animation
     }
-  }, [selectedEntry, globeRef]);
+  }, [selectedEntry]);
 
-  // Triggered when clicking a pin directly
-  const handleMarkerClick = (entry: JournalEntry) => {
-    onSelectEntry(entry);
-  };
+  // Initial animation
+  useEffect(() => {
+    if (globeRef.current) {
+      globeRef.current.controls().autoRotate = true;
+      globeRef.current.controls().autoRotateSpeed = 0.5;
+    }
+  }, []);
+
+  // Stop auto-rotate when user interacts
+  useEffect(() => {
+    if (globeRef.current) {
+      const controls = globeRef.current.controls();
+      controls.addEventListener('start', () => {
+        controls.autoRotate = false;
+      });
+    }
+  }, []);
 
   return (
-    <div className="w-full h-full relative" style={{ background: 'radial-gradient(circle, #090e25 0%, #030308 100%)' }}>
+    <div ref={containerRef} className="w-full h-full bg-[#030308] overflow-hidden" style={{ cursor: 'grab' }}>
       <Globe
         ref={globeRef}
-        onGlobeReady={() => setGlobeReady(true)}
-        backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+        width={dimensions.width}
+        height={dimensions.height}
+        globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+        backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
         
-        // Custom HTML Marker Config
-        htmlElementsData={entries}
-        htmlLat={(d: any) => d.lat}
-        htmlLng={(d: any) => d.lng}
+        // Pins (HTML Elements)
+        htmlElementsData={pinsData}
         htmlElement={(d: any) => {
-          const entry = d as JournalEntry;
-          const isMine = entry.authorId === user?.uid;
+          const el = document.createElement('div');
+          el.style.position = 'relative';
+          el.style.cursor = 'pointer';
+          el.style.transform = 'translate(-50%, -50%)';
+          // Use CSS variables for hover state via a style tag
+          el.innerHTML = `
+            <style>
+              .globe-pin-${d.id} .pin-tooltip {
+                opacity: 0;
+                transition: opacity 0.2s;
+              }
+              .globe-pin-${d.id}:hover .pin-tooltip {
+                opacity: 1;
+              }
+              .globe-pin-${d.id} .pin-dot {
+                transition: transform 0.2s;
+              }
+              .globe-pin-${d.id}:hover .pin-dot {
+                transform: scale(1.25);
+              }
+            </style>
+            <div class="globe-pin-${d.id}" style="position: relative;">
+              <div class="pin-tooltip" style="position: absolute; top: -35px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: rgba(0,0,0,0.8); color: white; font-size: 12px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; z-index: 50;">
+                ${d.title}
+              </div>
+              <div class="pin-dot" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 0 15px rgba(255,255,255,0.5); background-color: ${d.color};">
+                <div style="width: 8px; height: 8px; background-color: white; border-radius: 50%;"></div>
+              </div>
+            </div>
+          `;
           
-          const container = document.createElement('div');
-          container.className = `globe-marker-container ${isMine ? 'is-mine' : ''}`;
-
-          const ring = document.createElement('div');
-          ring.className = 'globe-marker-ring';
-
-          const thumbnail = document.createElement('div');
-          thumbnail.className = 'globe-marker-thumbnail';
-          const thumbnailSrc = (entry.photos && entry.photos.length > 0)
-            ? entry.photos[0]
-            : 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=150&auto=format&fit=crop';
-          thumbnail.style.backgroundImage = `url(${thumbnailSrc})`;
-
-          container.appendChild(ring);
-          container.appendChild(thumbnail);
-
-          // Event Listener for click
-          container.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleMarkerClick(entry);
-          });
-
-          return container;
+          el.style.pointerEvents = 'auto';
+          el.onclick = () => {
+            // Stop rotation if active
+            if (globeRef.current) globeRef.current.controls().autoRotate = false;
+            onSelectEntry(d.entry);
+          };
+          
+          return el;
         }}
+        htmlTransitionDuration={500}
         
-        // Disable default hover behavior for performance since we style HTML element hover via CSS
-        htmlTransitionDuration={0}
+        // Settings
+        atmosphereColor="#0066ff"
+        atmosphereAltitude={0.15}
       />
     </div>
   );
-};
+}

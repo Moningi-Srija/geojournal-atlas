@@ -1,0 +1,1681 @@
+{
+  "tag": "BODY",
+  "id": "",
+  "className": "",
+  "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 800
+  },
+  "display": "block",
+  "position": "static",
+  "zIndex": "auto",
+  "bg": "rgb(3, 3, 8)",
+  "color": "rgb(243, 244, 246)",
+  "text": "",
+  "children": [
+    {
+      "tag": "DIV",
+      "id": "root",
+      "className": "",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 800
+      },
+      "display": "block",
+      "position": "relative",
+      "zIndex": "auto",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(243, 244, 246)",
+      "text": "",
+      "children": [
+        {
+          "tag": "DIV",
+          "id": "",
+          "className": "",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 800
+          },
+          "display": "flex",
+          "position": "static",
+          "zIndex": "auto",
+          "bg": "rgb(3, 3, 8)",
+          "color": "rgb(243, 244, 246)",
+          "text": "",
+          "children": [
+            {
+              "tag": "HEADER",
+              "id": "",
+              "className": "glass-panel",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1280,
+                "h": 72
+              },
+              "display": "flex",
+              "position": "static",
+              "zIndex": "50",
+              "bg": "rgba(15, 20, 35, 0.65)",
+              "color": "rgb(243, 244, 246)",
+              "text": "",
+              "children": [
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "className": "",
+                  "rect": {
+                    "x": 24,
+                    "y": 13.65625,
+                    "w": 211.203125,
+                    "h": 43.671875
+                  },
+                  "display": "flex",
+                  "position": "static",
+                  "zIndex": "auto",
+                  "bg": "rgba(0, 0, 0, 0)",
+                  "color": "rgb(243, 244, 246)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "BUTTON",
+                      "id": "",
+                      "className": "glass-btn",
+                      "rect": {
+                        "x": 24,
+                        "y": 15.484375,
+                        "w": 40,
+                        "h": 40
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "svg",
+                          "id": "",
+                          "className": {},
+                          "rect": {
+                            "x": 32,
+                            "y": 23.484375,
+                            "w": 24,
+                            "h": 24
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "path",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 41,
+                                "y": 29.484375,
+                                "w": 6,
+                                "h": 12
+                              },
+                              "display": "inline",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(243, 244, 246)",
+                              "text": ""
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "",
+                      "rect": {
+                        "x": 80,
+                        "y": 23.484375,
+                        "w": 24,
+                        "h": 24
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(0, 240, 255)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "svg",
+                          "id": "",
+                          "className": {},
+                          "rect": {
+                            "x": 79.71011352539062,
+                            "y": 23.194488525390625,
+                            "w": 24.57977294921875,
+                            "h": 24.57977294921875
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(0, 240, 255)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "circle",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 81.75843048095703,
+                                "y": 25.2428035736084,
+                                "w": 20.483139038085938,
+                                "h": 20.48314094543457
+                              },
+                              "display": "inline",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(0, 240, 255)",
+                              "text": ""
+                            },
+                            {
+                              "tag": "path",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 87.65757751464844,
+                                "y": 31.141948699951172,
+                                "w": 8.684844970703125,
+                                "h": 8.684852600097656
+                              },
+                              "display": "inline",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(0, 240, 255)",
+                              "text": ""
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "",
+                      "rect": {
+                        "x": 120,
+                        "y": 13.65625,
+                        "w": 115.203125,
+                        "h": 43.671875
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "SPAN",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 120,
+                            "y": 13.65625,
+                            "w": 115.203125,
+                            "h": 28.796875
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "GeoJournal"
+                        },
+                        {
+                          "tag": "SPAN",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 120,
+                            "y": 42.453125,
+                            "w": 115.203125,
+                            "h": 14.875
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(156, 163, 175)",
+                          "text": "3D Memory Atlas"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "className": "glass-panel",
+                  "rect": {
+                    "x": 449.859375,
+                    "y": 15.5,
+                    "w": 161.109375,
+                    "h": 40
+                  },
+                  "display": "flex",
+                  "position": "static",
+                  "zIndex": "auto",
+                  "bg": "rgba(15, 20, 35, 0.65)",
+                  "color": "rgb(243, 244, 246)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "BUTTON",
+                      "id": "",
+                      "className": "glass-btn glass-btn-primary",
+                      "rect": {
+                        "x": 454.859375,
+                        "y": 20.5,
+                        "w": 80.5625,
+                        "h": 30
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgb(0, 136, 255)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "Globe"
+                    },
+                    {
+                      "tag": "BUTTON",
+                      "id": "",
+                      "className": "glass-btn",
+                      "rect": {
+                        "x": 535.421875,
+                        "y": 20.5,
+                        "w": 70.546875,
+                        "h": 30
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(255, 255, 255, 0.05)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "Map"
+                    }
+                  ]
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "className": "",
+                  "rect": {
+                    "x": 825.625,
+                    "y": 16,
+                    "w": 430.375,
+                    "h": 39
+                  },
+                  "display": "flex",
+                  "position": "static",
+                  "zIndex": "auto",
+                  "bg": "rgba(0, 0, 0, 0)",
+                  "color": "rgb(243, 244, 246)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "glass-panel",
+                      "rect": {
+                        "x": 825.625,
+                        "y": 17,
+                        "w": 253.703125,
+                        "h": 37
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(15, 20, 35, 0.65)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "BUTTON",
+                          "id": "",
+                          "className": "glass-btn",
+                          "rect": {
+                            "x": 830.625,
+                            "y": 22,
+                            "w": 92.796875,
+                            "h": 27
+                          },
+                          "display": "flex",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "svg",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 846.625,
+                                "y": 28.5,
+                                "w": 14,
+                                "h": 14
+                              },
+                              "display": "block",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(0, 240, 255)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 847.7916870117188,
+                                    "y": 37.25,
+                                    "w": 8.1666259765625,
+                                    "h": 3.5
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(0, 240, 255)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 855.9583129882812,
+                                    "y": 30.32466697692871,
+                                    "w": 1.747802734375,
+                                    "h": 4.517332077026367
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(0, 240, 255)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 857.7083129882812,
+                                    "y": 37.32583236694336,
+                                    "w": 1.75,
+                                    "h": 3.4241676330566406
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(0, 240, 255)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "circle",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 849.5416870117188,
+                                    "y": 30.25,
+                                    "w": 4.6666259765625,
+                                    "h": 4.666667938232422
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(0, 240, 255)",
+                                  "text": ""
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "DIV",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 927.421875,
+                            "y": 27.5,
+                            "w": 1,
+                            "h": 16
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(255, 255, 255, 0.1)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": ""
+                        },
+                        {
+                          "tag": "BUTTON",
+                          "id": "",
+                          "className": "glass-btn glass-btn-primary",
+                          "rect": {
+                            "x": 932.421875,
+                            "y": 22,
+                            "w": 60.359375,
+                            "h": 27
+                          },
+                          "display": "flex",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgb(0, 136, 255)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "Feed"
+                        },
+                        {
+                          "tag": "BUTTON",
+                          "id": "",
+                          "className": "glass-btn",
+                          "rect": {
+                            "x": 996.78125,
+                            "y": 22,
+                            "w": 77.546875,
+                            "h": 27
+                          },
+                          "display": "flex",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "My Pins"
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "",
+                      "rect": {
+                        "x": 1095.328125,
+                        "y": 16,
+                        "w": 160.671875,
+                        "h": 39
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "DIV",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 1112.328125,
+                            "y": 16,
+                            "w": 143.671875,
+                            "h": 39
+                          },
+                          "display": "flex",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "DIV",
+                              "id": "",
+                              "className": "",
+                              "rect": {
+                                "x": 1112.328125,
+                                "y": 16,
+                                "w": 55.671875,
+                                "h": 39
+                              },
+                              "display": "flex",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(243, 244, 246)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "SPAN",
+                                  "id": "",
+                                  "className": "",
+                                  "rect": {
+                                    "x": 1112.328125,
+                                    "y": 16,
+                                    "w": 55.671875,
+                                    "h": 21
+                                  },
+                                  "display": "block",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(255, 255, 255)",
+                                  "text": "Explorer"
+                                },
+                                {
+                                  "tag": "SPAN",
+                                  "id": "",
+                                  "className": "",
+                                  "rect": {
+                                    "x": 1135.328125,
+                                    "y": 37,
+                                    "w": 32.671875,
+                                    "h": 18
+                                  },
+                                  "display": "block",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgba(255, 255, 255, 0.5)",
+                                  "text": ""
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "DIV",
+                              "id": "",
+                              "className": "",
+                              "rect": {
+                                "x": 1180,
+                                "y": 19.5,
+                                "w": 32,
+                                "h": 32
+                              },
+                              "display": "flex",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(255, 255, 255, 0.1)",
+                              "color": "rgb(243, 244, 246)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "svg",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 1188,
+                                    "y": 27.5,
+                                    "w": 16,
+                                    "h": 16
+                                  },
+                                  "display": "block",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgba(255, 255, 255, 0.7)",
+                                  "text": "",
+                                  "children": [
+                                    {
+                                      "tag": "path",
+                                      "id": "",
+                                      "className": {},
+                                      "rect": {
+                                        "x": 1191.3333740234375,
+                                        "y": 37.5,
+                                        "w": 9.333251953125,
+                                        "h": 4
+                                      },
+                                      "display": "inline",
+                                      "position": "static",
+                                      "zIndex": "auto",
+                                      "bg": "rgba(0, 0, 0, 0)",
+                                      "color": "rgba(255, 255, 255, 0.7)",
+                                      "text": ""
+                                    },
+                                    {
+                                      "tag": "circle",
+                                      "id": "",
+                                      "className": {},
+                                      "rect": {
+                                        "x": 1193.3333740234375,
+                                        "y": 29.5,
+                                        "w": 5.333251953125,
+                                        "h": 5.333332061767578
+                                      },
+                                      "display": "inline",
+                                      "position": "static",
+                                      "zIndex": "auto",
+                                      "bg": "rgba(0, 0, 0, 0)",
+                                      "color": "rgba(255, 255, 255, 0.7)",
+                                      "text": ""
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "BUTTON",
+                              "id": "",
+                              "className": "",
+                              "rect": {
+                                "x": 1224,
+                                "y": 18,
+                                "w": 32,
+                                "h": 35
+                              },
+                              "display": "block",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgba(255, 255, 255, 0.5)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "svg",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 1232,
+                                    "y": 26,
+                                    "w": 16,
+                                    "h": 16
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgba(255, 255, 255, 0.5)",
+                                  "text": "",
+                                  "children": [
+                                    {
+                                      "tag": "path",
+                                      "id": "",
+                                      "className": {},
+                                      "rect": {
+                                        "x": 1242.6666259765625,
+                                        "y": 30.66666603088379,
+                                        "w": 3.3333740234375,
+                                        "h": 6.666666030883789
+                                      },
+                                      "display": "inline",
+                                      "position": "static",
+                                      "zIndex": "auto",
+                                      "bg": "rgba(0, 0, 0, 0)",
+                                      "color": "rgba(255, 255, 255, 0.5)",
+                                      "text": ""
+                                    },
+                                    {
+                                      "tag": "path",
+                                      "id": "",
+                                      "className": {},
+                                      "rect": {
+                                        "x": 1238,
+                                        "y": 34,
+                                        "w": 8,
+                                        "h": 0
+                                      },
+                                      "display": "inline",
+                                      "position": "static",
+                                      "zIndex": "auto",
+                                      "bg": "rgba(0, 0, 0, 0)",
+                                      "color": "rgba(255, 255, 255, 0.5)",
+                                      "text": ""
+                                    },
+                                    {
+                                      "tag": "path",
+                                      "id": "",
+                                      "className": {},
+                                      "rect": {
+                                        "x": 1234,
+                                        "y": 28,
+                                        "w": 4,
+                                        "h": 12
+                                      },
+                                      "display": "inline",
+                                      "position": "static",
+                                      "zIndex": "auto",
+                                      "bg": "rgba(0, 0, 0, 0)",
+                                      "color": "rgba(255, 255, 255, 0.5)",
+                                      "text": ""
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "DIV",
+              "id": "",
+              "className": "",
+              "rect": {
+                "x": 0,
+                "y": 72,
+                "w": 1280,
+                "h": 728
+              },
+              "display": "block",
+              "position": "relative",
+              "zIndex": "auto",
+              "bg": "rgba(0, 0, 0, 0)",
+              "color": "rgb(243, 244, 246)",
+              "text": "",
+              "children": [
+                {
+                  "tag": "MAIN",
+                  "id": "",
+                  "className": "",
+                  "rect": {
+                    "x": 0,
+                    "y": 72,
+                    "w": 1280,
+                    "h": 728
+                  },
+                  "display": "block",
+                  "position": "absolute",
+                  "zIndex": "0",
+                  "bg": "rgba(0, 0, 0, 0)",
+                  "color": "rgb(243, 244, 246)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "w-full h-full bg-[#030308] overflow-hidden",
+                      "rect": {
+                        "x": 0,
+                        "y": 72,
+                        "w": 1280,
+                        "h": 728
+                      },
+                      "display": "block",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "DIV",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 0,
+                            "y": 72,
+                            "w": 1280,
+                            "h": 728
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "DIV",
+                              "id": "",
+                              "className": "",
+                              "rect": {
+                                "x": 0,
+                                "y": 72,
+                                "w": 1280,
+                                "h": 728
+                              },
+                              "display": "block",
+                              "position": "relative",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(243, 244, 246)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "DIV",
+                                  "id": "",
+                                  "className": "",
+                                  "rect": {
+                                    "x": 0,
+                                    "y": 72,
+                                    "w": 1280,
+                                    "h": 728
+                                  },
+                                  "display": "block",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(243, 244, 246)",
+                                  "text": "",
+                                  "children": [
+                                    {
+                                      "tag": "DIV",
+                                      "id": "",
+                                      "className": "scene-container",
+                                      "rect": {
+                                        "x": 0,
+                                        "y": 72,
+                                        "w": 1280,
+                                        "h": 728
+                                      },
+                                      "display": "block",
+                                      "position": "relative",
+                                      "zIndex": "auto",
+                                      "bg": "rgba(0, 0, 0, 0)",
+                                      "color": "rgb(243, 244, 246)",
+                                      "text": "",
+                                      "children": [
+                                        {
+                                          "tag": "CANVAS",
+                                          "id": "",
+                                          "className": "",
+                                          "rect": {
+                                            "x": 0,
+                                            "y": 72,
+                                            "w": 1280,
+                                            "h": 728
+                                          },
+                                          "display": "block",
+                                          "position": "static",
+                                          "zIndex": "auto",
+                                          "bg": "rgba(0, 0, 0, 0)",
+                                          "color": "rgb(243, 244, 246)",
+                                          "text": ""
+                                        },
+                                        {
+                                          "tag": "DIV",
+                                          "id": "",
+                                          "className": "",
+                                          "rect": {
+                                            "x": 0,
+                                            "y": 72,
+                                            "w": 1280,
+                                            "h": 728
+                                          },
+                                          "display": "block",
+                                          "position": "absolute",
+                                          "zIndex": "auto",
+                                          "bg": "rgba(0, 0, 0, 0)",
+                                          "color": "rgb(243, 244, 246)",
+                                          "text": ""
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "BUTTON",
+              "id": "",
+              "className": "glass-panel",
+              "rect": {
+                "x": 380,
+                "y": 20,
+                "w": 44,
+                "h": 44
+              },
+              "display": "flex",
+              "position": "absolute",
+              "zIndex": "15",
+              "bg": "rgba(15, 20, 35, 0.65)",
+              "color": "rgb(255, 255, 255)",
+              "text": "",
+              "children": [
+                {
+                  "tag": "svg",
+                  "id": "",
+                  "className": {},
+                  "rect": {
+                    "x": 393,
+                    "y": 33,
+                    "w": 18,
+                    "h": 18
+                  },
+                  "display": "block",
+                  "position": "static",
+                  "zIndex": "auto",
+                  "bg": "rgba(0, 0, 0, 0)",
+                  "color": "rgb(255, 255, 255)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "id": "",
+                      "className": {},
+                      "rect": {
+                        "x": 399.75,
+                        "y": 37.5,
+                        "w": 4.5,
+                        "h": 9
+                      },
+                      "display": "inline",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(255, 255, 255)",
+                      "text": ""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "DIV",
+              "id": "",
+              "className": "glass-panel",
+              "rect": {
+                "x": 20,
+                "y": 20,
+                "w": 340,
+                "h": 760
+              },
+              "display": "flex",
+              "position": "absolute",
+              "zIndex": "10",
+              "bg": "rgba(15, 20, 35, 0.65)",
+              "color": "rgb(243, 244, 246)",
+              "text": "",
+              "children": [
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "className": "",
+                  "rect": {
+                    "x": 21,
+                    "y": 21,
+                    "w": 338,
+                    "h": 187.265625
+                  },
+                  "display": "block",
+                  "position": "static",
+                  "zIndex": "auto",
+                  "bg": "rgba(0, 0, 0, 0)",
+                  "color": "rgb(243, 244, 246)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "flex items-center gap-2 mb-4",
+                      "rect": {
+                        "x": 41,
+                        "y": 45,
+                        "w": 298,
+                        "h": 47.265625
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "DIV",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 41,
+                            "y": 47.625,
+                            "w": 36,
+                            "h": 42
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 136, 255, 0.15)",
+                          "color": "rgb(0, 240, 255)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "svg",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 49,
+                                "y": 55.625,
+                                "w": 20,
+                                "h": 20
+                              },
+                              "display": "inline",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(0, 240, 255)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "circle",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 50.66666793823242,
+                                    "y": 57.29166793823242,
+                                    "w": 16.666667938232422,
+                                    "h": 16.666667938232422
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(0, 240, 255)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 55.46666717529297,
+                                    "y": 62.09166717529297,
+                                    "w": 7.0666656494140625,
+                                    "h": 7.0666656494140625
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(0, 240, 255)",
+                                  "text": ""
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "DIV",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 85,
+                            "y": 45,
+                            "w": 122.734375,
+                            "h": 47.265625
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "H1",
+                              "id": "",
+                              "className": "",
+                              "rect": {
+                                "x": 85,
+                                "y": 45,
+                                "w": 122.734375,
+                                "h": 30
+                              },
+                              "display": "block",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(243, 244, 246)",
+                              "text": "Memory Atlas"
+                            },
+                            {
+                              "tag": "P",
+                              "id": "",
+                              "className": "",
+                              "rect": {
+                                "x": 85,
+                                "y": 75,
+                                "w": 122.734375,
+                                "h": 17.265625
+                              },
+                              "display": "block",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(156, 163, 175)",
+                              "text": ""
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "",
+                      "rect": {
+                        "x": 41,
+                        "y": 92.265625,
+                        "w": 298,
+                        "h": 38
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(255, 255, 255, 0.02)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "BUTTON",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 46,
+                            "y": 97.265625,
+                            "w": 140,
+                            "h": 28
+                          },
+                          "display": "flex",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 136, 255, 0.2)",
+                          "color": "rgb(255, 255, 255)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "svg",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 85.109375,
+                                "y": 105.265625,
+                                "w": 12,
+                                "h": 12
+                              },
+                              "display": "block",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(255, 255, 255)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 91.109375,
+                                    "y": 108.765625,
+                                    "w": 0,
+                                    "h": 7
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(255, 255, 255)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 86.109375,
+                                    "y": 106.765625,
+                                    "w": 10,
+                                    "h": 9
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(255, 255, 255)",
+                                  "text": ""
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "BUTTON",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 194,
+                            "y": 97.265625,
+                            "w": 140,
+                            "h": 28
+                          },
+                          "display": "flex",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(156, 163, 175)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "svg",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 228.109375,
+                                "y": 105.265625,
+                                "w": 12,
+                                "h": 12
+                              },
+                              "display": "block",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(156, 163, 175)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 229.609375,
+                                    "y": 106.765625,
+                                    "w": 9,
+                                    "h": 9
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(156, 163, 175)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 237.109375,
+                                    "y": 109.765625,
+                                    "w": 0,
+                                    "h": 4
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(156, 163, 175)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 234.609375,
+                                    "y": 107.765625,
+                                    "w": 0,
+                                    "h": 6
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(156, 163, 175)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 232.109375,
+                                    "y": 112.265625,
+                                    "w": 0,
+                                    "h": 1.5
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(156, 163, 175)",
+                                  "text": ""
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "relative",
+                      "rect": {
+                        "x": 41,
+                        "y": 146.265625,
+                        "w": 298,
+                        "h": 45
+                      },
+                      "display": "block",
+                      "position": "relative",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "svg",
+                          "id": "",
+                          "className": {},
+                          "rect": {
+                            "x": 53,
+                            "y": 160.765625,
+                            "w": 16,
+                            "h": 16
+                          },
+                          "display": "block",
+                          "position": "absolute",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(107, 114, 128)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "path",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 64.1066665649414,
+                                "y": 171.87228393554688,
+                                "w": 2.8933334350585938,
+                                "h": 2.893341064453125
+                              },
+                              "display": "inline",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(107, 114, 128)",
+                              "text": ""
+                            },
+                            {
+                              "tag": "circle",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 55,
+                                "y": 162.765625,
+                                "w": 10.666671752929688,
+                                "h": 10.666671752929688
+                              },
+                              "display": "inline",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(107, 114, 128)",
+                              "text": ""
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "INPUT",
+                          "id": "",
+                          "className": "glass-input w-full",
+                          "rect": {
+                            "x": 41,
+                            "y": 146.265625,
+                            "w": 298,
+                            "h": 45
+                          },
+                          "display": "inline-block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(255, 255, 255, 0.03)",
+                          "color": "rgb(243, 244, 246)",
+                          "text": ""
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "DIV",
+                  "id": "",
+                  "className": "overflow-y-auto",
+                  "rect": {
+                    "x": 21,
+                    "y": 208.265625,
+                    "w": 338,
+                    "h": 570.734375
+                  },
+                  "display": "flex",
+                  "position": "static",
+                  "zIndex": "auto",
+                  "bg": "rgba(0, 0, 0, 0)",
+                  "color": "rgb(243, 244, 246)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "DIV",
+                      "id": "",
+                      "className": "",
+                      "rect": {
+                        "x": 33,
+                        "y": 224.265625,
+                        "w": 314,
+                        "h": 200
+                      },
+                      "display": "flex",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(107, 114, 128)",
+                      "text": "",
+                      "children": [
+                        {
+                          "tag": "DIV",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 161,
+                            "y": 243.078125,
+                            "w": 58,
+                            "h": 64
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(255, 255, 255, 0.02)",
+                          "color": "rgb(107, 114, 128)",
+                          "text": "",
+                          "children": [
+                            {
+                              "tag": "svg",
+                              "id": "",
+                              "className": {},
+                              "rect": {
+                                "x": 178,
+                                "y": 260.078125,
+                                "w": 24,
+                                "h": 24
+                              },
+                              "display": "inline",
+                              "position": "static",
+                              "zIndex": "auto",
+                              "bg": "rgba(0, 0, 0, 0)",
+                              "color": "rgb(107, 114, 128)",
+                              "text": "",
+                              "children": [
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 190,
+                                    "y": 267.078125,
+                                    "w": 0,
+                                    "h": 14
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(107, 114, 128)",
+                                  "text": ""
+                                },
+                                {
+                                  "tag": "path",
+                                  "id": "",
+                                  "className": {},
+                                  "rect": {
+                                    "x": 180,
+                                    "y": 263.078125,
+                                    "w": 20,
+                                    "h": 18
+                                  },
+                                  "display": "inline",
+                                  "position": "static",
+                                  "zIndex": "auto",
+                                  "bg": "rgba(0, 0, 0, 0)",
+                                  "color": "rgb(107, 114, 128)",
+                                  "text": ""
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "P",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 102.6875,
+                            "y": 319.078125,
+                            "w": 174.625,
+                            "h": 20.390625
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(107, 114, 128)",
+                          "text": "No memories captured yet."
+                        },
+                        {
+                          "tag": "P",
+                          "id": "",
+                          "className": "",
+                          "rect": {
+                            "x": 90,
+                            "y": 351.46875,
+                            "w": 200,
+                            "h": 54
+                          },
+                          "display": "block",
+                          "position": "static",
+                          "zIndex": "auto",
+                          "bg": "rgba(0, 0, 0, 0)",
+                          "color": "rgb(107, 114, 128)",
+                          "text": "Click the float button in the bottom right corner to add a pin on the globe!"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "BUTTON",
+              "id": "",
+              "className": "glass-btn glass-btn-primary",
+              "rect": {
+                "x": 1200,
+                "y": 720,
+                "w": 56,
+                "h": 56
+              },
+              "display": "flex",
+              "position": "absolute",
+              "zIndex": "10",
+              "bg": "rgb(0, 136, 255)",
+              "color": "rgb(243, 244, 246)",
+              "text": "",
+              "children": [
+                {
+                  "tag": "svg",
+                  "id": "",
+                  "className": {},
+                  "rect": {
+                    "x": 1216,
+                    "y": 736,
+                    "w": 24,
+                    "h": 24
+                  },
+                  "display": "block",
+                  "position": "static",
+                  "zIndex": "auto",
+                  "bg": "rgba(0, 0, 0, 0)",
+                  "color": "rgb(243, 244, 246)",
+                  "text": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "id": "",
+                      "className": {},
+                      "rect": {
+                        "x": 1221,
+                        "y": 748,
+                        "w": 14,
+                        "h": 0
+                      },
+                      "display": "inline",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": ""
+                    },
+                    {
+                      "tag": "path",
+                      "id": "",
+                      "className": {},
+                      "rect": {
+                        "x": 1228,
+                        "y": 741,
+                        "w": 0,
+                        "h": 14
+                      },
+                      "display": "inline",
+                      "position": "static",
+                      "zIndex": "auto",
+                      "bg": "rgba(0, 0, 0, 0)",
+                      "color": "rgb(243, 244, 246)",
+                      "text": ""
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

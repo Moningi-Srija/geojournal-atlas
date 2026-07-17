@@ -42,7 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Group entries by country name parsed from locationName
   const countryGroups = entries.reduce((groups: { [key: string]: JournalEntry[] }, entry) => {
-    const parts = entry.locationName.split(',');
+    const locationStr = entry.locationName || '';
+    const parts = locationStr.split(',');
     const country = parts[parts.length - 1]?.trim() || 'Unknown';
     if (!groups[country]) {
       groups[country] = [];
@@ -66,10 +67,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Filter entries based on search query
   const filteredEntries = entries.filter((entry) => {
     const query = searchQuery.toLowerCase();
+    const title = entry.title || '';
+    const loc = entry.locationName || '';
+    const body = entry.body || '';
     return (
-      entry.title.toLowerCase().includes(query) ||
-      entry.locationName.toLowerCase().includes(query) ||
-      entry.body.toLowerCase().includes(query)
+      title.toLowerCase().includes(query) ||
+      loc.toLowerCase().includes(query) ||
+      body.toLowerCase().includes(query)
     );
   });
 
@@ -89,8 +93,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className="glass-panel"
         style={{
           position: 'absolute',
-          top: '20px',
-          left: isOpen ? '380px' : '20px',
+          top: '100px',
+          left: isOpen ? '380px' : '24px',
           zIndex: 15,
           padding: '12px',
           borderRadius: '12px',
@@ -112,9 +116,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className="glass-panel"
         style={{
           position: 'absolute',
-          top: '20px',
-          bottom: '20px',
-          left: isOpen ? '20px' : '-360px',
+          top: '100px',
+          bottom: '24px',
+          left: isOpen ? '24px' : '-360px',
           width: '340px',
           zIndex: 10,
           display: 'flex',

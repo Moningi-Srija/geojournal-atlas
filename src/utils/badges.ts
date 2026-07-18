@@ -131,6 +131,78 @@ export const BADGE_DEFINITIONS: Record<string, BadgeDefinition> = {
 
 const normaliseCountry = (country: string) => country.trim().replace(/\s+/g, ' ');
 
+const normaliseCity = (locationName: string) => (
+  locationName
+    .split(',')[0]
+    .trim()
+    .replace(/\s+/g, ' ')
+);
+
+export const COUNTRY_BADGE_CITY_TARGET = 4;
+
+const COUNTRY_BADGE_EMOJIS: Record<string, string> = {
+  colombia: '🇨🇴',
+  france: '🇫🇷',
+  germany: '🇩🇪',
+  india: '🇮🇳',
+  japan: '🇯🇵',
+  morocco: '🇲🇦',
+  norway: '🇳🇴',
+  portugal: '🇵🇹',
+  singapore: '🇸🇬',
+  switzerland: '🇨🇭',
+  tanzania: '🇹🇿',
+  türkiye: '🇹🇷',
+  turkey: '🇹🇷',
+  'united states': '🇺🇸',
+  usa: '🇺🇸',
+};
+
+export interface CountryBadgeMilestone {
+  id: string;
+  country: string;
+  emoji: string;
+  cityCount: number;
+  cities: string[];
+}
+
+export const getCountryBadgeEmoji = (country: string) => (
+  COUNTRY_BADGE_EMOJIS[normaliseCountry(country).toLocaleLowerCase()] ?? '🧭'
+);
+
+export const getCountryBadgeMilestones = (
+  entries: JournalEntry[],
+  cityTarget = COUNTRY_BADGE_CITY_TARGET,
+): CountryBadgeMilestone[] => {
+  const countryCities = new Map<string, { country: string; cities: Map<string, string> }>();
+
+  entries.forEach((entry) => {
+    if (!entry.country?.trim() || !entry.locationName?.trim()) return;
+    const country = normaliseCountry(entry.country);
+    const city = normaliseCity(entry.locationName);
+    if (!city) return;
+
+    const countryKey = country.toLocaleLowerCase();
+    const current = countryCities.get(countryKey) ?? {
+      country,
+      cities: new Map<string, string>(),
+    };
+    current.cities.set(city.toLocaleLowerCase(), city);
+    countryCities.set(countryKey, current);
+  });
+
+  return [...countryCities.values()]
+    .filter(({ cities }) => cities.size >= cityTarget)
+    .map(({ country, cities }) => ({
+      id: getCountryBadgeId(country),
+      country,
+      emoji: getCountryBadgeEmoji(country),
+      cityCount: cities.size,
+      cities: [...cities.values()],
+    }))
+    .sort((a, b) => b.cityCount - a.cityCount || a.country.localeCompare(b.country));
+};
+
 const CATEGORY_KEYWORDS: Record<EntryCategory, string[]> = {
   trek: ['trek', 'hike', 'hiking', 'trail', 'summit', 'mountain', 'climb'],
   beach: ['beach', 'coast', 'coastal', 'ocean', 'sea', 'shore', 'surf'],
@@ -207,8 +279,8 @@ export const getEarnedBadgeIds = (entries: JournalEntry[]) => {
     })
     .map((badge) => badge.id);
 
-  const countryIds = getDistinctCountries(entries)
-    .map(getCountryBadgeId)
+  const countryIds = getCountryBadgeMilestones(entries)
+    .map((milestone) => milestone.id)
     .filter((id) => id !== 'country_');
 
   return [...achievementIds, ...countryIds];
@@ -228,7 +300,7 @@ export const getBadgeDefinition = (badgeId: string): BadgeDefinition => {
     return {
       id: badgeId,
       name: countryName || 'Passport Stamp',
-      description: `A passport stamp for ${countryName || 'a new destination'}.`,
+      description: `Explore ${COUNTRY_BADGE_CITY_TARGET} or more cities across ${countryName || 'a new destination'}.`,
       icon: Award,
       color: '#facc15',
       category: 'country',

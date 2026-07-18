@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, ArrowLeft, Globe2, Loader2, LockKeyhole, MapPin } from 'lucide-react';
 import type { JournalEntry, UserProfile } from '../types';
+import { getCountryBadgeMilestones } from '../utils/badges';
 import { fetchExplorerPins } from '../utils/firestore';
 import { EntryCard } from './EntryCard';
 import { GlobeView } from './GlobeView';
@@ -84,6 +85,7 @@ export function ExplorerAtlasPanel({ explorer, onClose, previewEntries }: Explor
   const displayName = explorer.displayName || explorer.username || 'Explorer';
   const initial = displayName.charAt(0).toUpperCase();
   const memoryLabel = `${entries.length} public ${entries.length === 1 ? 'memory' : 'memories'}`;
+  const countryBadges = getCountryBadgeMilestones(entries);
 
   return (
     <section
@@ -161,6 +163,23 @@ export function ExplorerAtlasPanel({ explorer, onClose, previewEntries }: Explor
           <span className="explorer-atlas-kicker">Explorer Atlas</span>
           <h2 id="explorer-atlas-title">{displayName}’s public world</h2>
             <span>@{explorer.username}{previewEntries ? ' · presentation sample' : ''}</span>
+            {countryBadges.length > 0 && (
+              <div
+                aria-label={`${displayName}'s country mastery badges`}
+                style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '7px' }}
+              >
+                {countryBadges.slice(0, 3).map((badge) => (
+                  <span
+                    key={badge.id}
+                    title={`${badge.country} Pathfinder · ${badge.cityCount} cities: ${badge.cities.join(', ')}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 8px', borderRadius: '999px', color: '#fef3c7', background: 'rgba(245,158,11,0.13)', border: '1px solid rgba(251,191,36,0.34)', fontSize: '0.67rem', fontWeight: 750, whiteSpace: 'nowrap' }}
+                  >
+                    <span role="img" aria-label={`${badge.country} flag`} style={{ fontSize: '0.9rem' }}>{badge.emoji}</span>
+                    {badge.country} Pathfinder
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

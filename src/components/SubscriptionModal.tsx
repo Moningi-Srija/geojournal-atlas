@@ -135,7 +135,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
           <div className="pro-benefit-grid">
             <PlanFeature>Nexus AI planning grounded in your Atlas, subject to fair-use limits</PlanFeature>
             <PlanFeature>Semantic memory search and richer planning context</PlanFeature>
-            <PlanFeature>Advanced heatmap insights and Atlas personalization</PlanFeature>
+            <PlanFeature>Advanced Atlas insights and passport personalization</PlanFeature>
             <PlanFeature>Priority import tools and expanded memory media</PlanFeature>
           </div>
         </section>

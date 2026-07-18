@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Plus, Compass, User as UserIcon, LogOut, Users, List, MapPin, Sparkles, Flame, Globe2, Map as MapIcon, Lightbulb, BookOpen } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Plus, Compass, User as UserIcon, LogOut, Users, List, MapPin, Sparkles, Globe2, Map as MapIcon, Lightbulb, BookOpen } from 'lucide-react';
 import type { JournalEntry, UserProfile } from './types';
 import { GlobeView } from './components/GlobeView';
 import { LeafletMap } from './components/LeafletMap';
@@ -18,8 +18,10 @@ import { AISearchBar } from './components/AISearchBar';
 import { ProfileSetupModal } from './components/ProfileSetupModal';
 import { InspirationPanel } from './components/InspirationPanel';
 import { ExplorerAtlasPanel } from './components/ExplorerAtlasPanel';
+import { DemoTour } from './components/DemoTour';
 import { useAuth } from './components/AuthContext';
 import { fetchPins, savePin, deletePin as deletePinFirestore } from './utils/firestore';
+import { getCountryBadgeMilestones } from './utils/badges';
 
 const demoYearsAgo = (years: number, dayOffset = 0) => {
   const date = new Date();
@@ -156,6 +158,34 @@ const DEMO_FRIEND_ENTRIES: JournalEntry[] = [
     category: 'beach',
     visibility: 'public',
     date: Date.now() - 72 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-ananya-varanasi',
+    authorId: 'demo-ananya',
+    title: 'First light on the Ganges',
+    body: 'A quiet boat before sunrise, temple bells across the water and a city slowly waking around the ghats.',
+    photos: ['https://images.unsplash.com/photo-1561361513-2d000a50f0dc?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Varanasi, Uttar Pradesh',
+    lat: 25.3176,
+    lng: 82.9739,
+    country: 'India',
+    category: 'culture',
+    visibility: 'public',
+    date: Date.now() - 102 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-ananya-jaipur',
+    authorId: 'demo-ananya',
+    title: 'Blue hour above the Pink City',
+    body: 'Rooftops, old observatories and the warm sandstone of Jaipur turning violet after sunset.',
+    photos: ['https://images.unsplash.com/photo-1477587458883-47145ed94245?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Jaipur, Rajasthan',
+    lat: 26.9124,
+    lng: 75.7873,
+    country: 'India',
+    category: 'city',
+    visibility: 'public',
+    date: Date.now() - 132 * 24 * 60 * 60 * 1000,
   },
   {
     id: 'demo-noah-lisbon',
@@ -426,6 +456,20 @@ const DEMO_EXTRA_OWN_ENTRIES: JournalEntry[] = [
     date: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
+    id: 'demo-srija-udaipur',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Lake light in Udaipur',
+    body: 'A slow evening beside Lake Pichola, white palaces reflecting gold and a rooftop dinner that lasted for hours.',
+    photos: ['https://images.unsplash.com/photo-1599661046289-e31897846e41?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Udaipur, Rajasthan',
+    lat: 24.5854,
+    lng: 73.7125,
+    country: 'India',
+    category: 'culture',
+    visibility: 'public',
+    date: Date.now() - 38 * 24 * 60 * 60 * 1000,
+  },
+  {
     id: 'demo-srija-cappadocia',
     authorId: DEMO_PROFILE.uid,
     title: 'Balloons before breakfast',
@@ -453,6 +497,104 @@ const DEMO_EXTRA_OWN_ENTRIES: JournalEntry[] = [
     visibility: 'public',
     date: Date.now() - 202 * 24 * 60 * 60 * 1000,
   },
+  {
+    id: 'demo-srija-kudremukh',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Mist on the Kudremukh trail',
+    body: 'A steep forest hike through monsoon grasslands, waterfalls and ridgelines that vanished into cloud.',
+    photos: ['https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Kudremukh, Karnataka',
+    lat: 13.1309,
+    lng: 75.2738,
+    country: 'India',
+    category: 'trek',
+    visibility: 'public',
+    date: Date.now() - 221 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-valley-flowers',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Trail into the Valley of Flowers',
+    body: 'A long mountain hike through the national park, with wildflowers, rain and one unforgettable summit view.',
+    photos: ['https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Valley of Flowers, Uttarakhand',
+    lat: 30.728,
+    lng: 79.6053,
+    country: 'India',
+    category: 'trek',
+    visibility: 'public',
+    date: Date.now() - 246 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-thekkady',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Wild morning in Thekkady',
+    body: 'Forest paths, a still lake and an early wildlife walk before the park became busy.',
+    photos: ['https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Thekkady, Kerala',
+    lat: 9.6031,
+    lng: 77.1615,
+    country: 'India',
+    category: 'nature',
+    visibility: 'private',
+    date: Date.now() - 269 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-varkala',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Cliff cafe above Varkala beach',
+    body: 'A quiet beach morning followed by strong coffee, a tiny cafe lunch and sunset from the red cliffs.',
+    photos: ['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Varkala, Kerala',
+    lat: 8.7379,
+    lng: 76.7163,
+    country: 'India',
+    category: 'beach',
+    visibility: 'public',
+    date: Date.now() - 294 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-gokarna',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Seafood supper after Gokarna',
+    body: 'Walked the coastal trail between beaches, then found a family restaurant for a long seafood dinner.',
+    photos: ['https://images.unsplash.com/photo-1473116763249-2faaef81ccda?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Gokarna, Karnataka',
+    lat: 14.5479,
+    lng: 74.3188,
+    country: 'India',
+    category: 'beach',
+    visibility: 'public',
+    date: Date.now() - 318 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-havelock',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Blue water at Havelock',
+    body: 'A bright shore, a slow snorkel and a beach lunch cooked from the morning catch.',
+    photos: ['https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Havelock Island, Andaman',
+    lat: 12.0083,
+    lng: 93.0089,
+    country: 'India',
+    category: 'beach',
+    visibility: 'public',
+    date: Date.now() - 341 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-hampi',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Stories carved into Hampi',
+    body: 'A heritage walk through temple courtyards, stone chariots and historic ruins glowing before sunset.',
+    photos: ['https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Hampi, Karnataka',
+    lat: 15.335,
+    lng: 76.46,
+    country: 'India',
+    category: 'culture',
+    visibility: 'public',
+    date: Date.now() - 366 * 24 * 60 * 60 * 1000,
+  },
 ];
 
 function App() {
@@ -478,26 +620,34 @@ function App() {
   const [isInspirationOpen, setIsInspirationOpen] = useState(false);
   const [explorerProfile, setExplorerProfile] = useState<UserProfile | null>(null);
   const [aiSearchFilter, setAiSearchFilter] = useState<string[] | null>(null);
-  const [isHeatmapMode, setIsHeatmapMode] = useState(false);
   const [showOnlyMine, setShowOnlyMine] = useState(false);
   const [pinsRefreshKey, setPinsRefreshKey] = useState(0);
   const [viewMode, setViewMode] = useState<'globe' | 'map'>(() => {
     return (localStorage.getItem('geojournal_viewMode') as 'globe' | 'map') || 'globe';
   });
 
+  const personalAtlasEntries = useMemo(() => {
+    if (!visibleProfile) return [];
+    return entries.filter((entry) => (
+      entry.authorId === visibleProfile.uid
+      || entry.acceptedCollaboratorIds?.includes(visibleProfile.uid)
+    ));
+  }, [entries, visibleProfile]);
+
   const atlasEntries = useMemo(() => {
     if (!isDemoMode) return entries;
-
-    const personalEntries = entries.filter((entry) => (
-      entry.authorId === DEMO_PROFILE.uid
-      || entry.acceptedCollaboratorIds?.includes(DEMO_PROFILE.uid)
-    ));
-    if (showOnlyMine) return personalEntries;
+    if (showOnlyMine) return personalAtlasEntries;
 
     return Array.from(
-      new Map([...personalEntries, ...DEMO_FRIEND_ENTRIES].map((entry) => [entry.id, entry])).values(),
+      new Map([...personalAtlasEntries, ...DEMO_FRIEND_ENTRIES].map((entry) => [entry.id, entry])).values(),
     );
-  }, [entries, isDemoMode, showOnlyMine]);
+  }, [entries, isDemoMode, showOnlyMine, personalAtlasEntries]);
+
+  const profileCountryBadges = useMemo(
+    () => getCountryBadgeMilestones(personalAtlasEntries),
+    [personalAtlasEntries],
+  );
+  const friendPinCount = isDemoMode ? Math.max(0, atlasEntries.length - personalAtlasEntries.length) : 0;
 
   useEffect(() => {
     localStorage.setItem('geojournal_viewMode', viewMode);
@@ -709,6 +859,18 @@ function App() {
     setIsCreateOpen(true);
   };
 
+  const prepareDemoTourStep = useCallback((stepIndex: number) => {
+    setSelectedEntry(null);
+    setIsSocialOpen(false);
+    setIsProfileOpen(false);
+    setIsAICopilotOpen(false);
+    setIsInspirationOpen(false);
+    setExplorerProfile(null);
+
+    // The final two journal steps point to controls inside the open drawer.
+    if (stepIndex === 3 || stepIndex === 4) setIsSidebarOpen(true);
+  }, []);
+
   const enterDemoAtlas = () => {
     sessionStorage.setItem('geojournal_demo_mode', 'true');
     setIsDemoMode(true);
@@ -755,17 +917,16 @@ function App() {
             {isDemoMode && <span className="demo-mode-chip">Demo</span>}
           </div>
 
-          <div className="app-search-zone">
+          <div className="app-search-zone" data-tour="semantic-search">
             <AISearchBar entries={atlasEntries} onSearchComplete={setAiSearchFilter} />
           </div>
 
           <div className="app-topbar-actions">
-            <nav className="app-scope-switcher" aria-label="Memory scope">
+            <nav className="app-scope-switcher" aria-label="Memory scope" data-tour="scope-switcher">
               <button
                 type="button"
                 onClick={() => {
                   setShowOnlyMine(false);
-                  setIsHeatmapMode(false);
                   setSelectedEntry(null);
                   setAiSearchFilter(null);
                 }}
@@ -773,7 +934,9 @@ function App() {
                 aria-pressed={!showOnlyMine}
                 title={isDemoMode ? "Show your circle's public memories" : 'Explore public travel memories'}
               >
-                <List size={15} /> <span>{isDemoMode ? 'Circle' : 'Explore'}</span>
+                <List size={15} />
+                <span>{isDemoMode ? 'Circle' : 'Explore'}</span>
+                {isDemoMode && <small>{personalAtlasEntries.length + DEMO_FRIEND_ENTRIES.length}</small>}
               </button>
               <button
                 type="button"
@@ -787,10 +950,11 @@ function App() {
                 title="Show only my memories"
               >
                 <MapPin size={15} /> <span>Mine</span>
+                {isDemoMode && <small>{personalAtlasEntries.length}</small>}
               </button>
             </nav>
 
-            <button type="button" onClick={() => setIsSidebarOpen(true)} className="app-utility-button" title="Open memories">
+            <button type="button" onClick={() => setIsSidebarOpen(true)} className="app-utility-button" title="Open memories" data-tour="memories-rediscover">
               <BookOpen size={17} /> <span>Memories</span>
             </button>
 
@@ -802,7 +966,7 @@ function App() {
               <Lightbulb size={17} /> <span>Inspire</span>
             </button>
 
-            <button type="button" onClick={openProfile} className="app-profile-button" title="Open explorer profile">
+            <button type="button" onClick={openProfile} className="app-profile-button" title="Open explorer profile" aria-label="Open explorer profile">
               {visibleProfile?.photoURL ? (
                 <img src={visibleProfile.photoURL} alt="" />
               ) : (
@@ -812,6 +976,16 @@ function App() {
                 <strong>{visibleProfile?.displayName || 'Explorer'}</strong>
                 <small>@{visibleProfile?.username || 'traveler'}</small>
               </span>
+              {profileCountryBadges[0] && (
+                <span
+                  className="app-profile-country-badge"
+                  title={`${profileCountryBadges[0].country} Pathfinder · ${profileCountryBadges[0].cityCount} cities`}
+                  role="img"
+                  aria-label={`${profileCountryBadges[0].country} Pathfinder badge`}
+                >
+                  {profileCountryBadges[0].emoji}
+                </span>
+              )}
             </button>
 
             <button type="button" onClick={() => void exitAtlas()} className="app-icon-button" title={isDemoMode ? 'Exit demo Atlas' : 'Log out'} aria-label={isDemoMode ? 'Exit demo Atlas' : 'Log out'}>
@@ -840,10 +1014,8 @@ function App() {
               selectedEntry={selectedEntry}
               onSelectEntry={handleSelectEntry}
               filteredIds={aiSearchFilter}
-              isHeatmapMode={isHeatmapMode}
               currentUserId={visibleProfile?.uid}
               authorProfiles={isDemoMode ? DEMO_PROFILES_BY_ID : undefined}
-              showOwnershipLegend={isDemoMode && !showOnlyMine && !isHeatmapMode}
             />
           </ErrorBoundary>
         ) : (
@@ -853,9 +1025,29 @@ function App() {
             onSelectEntry={handleSelectEntry}
             currentUserId={visibleProfile?.uid}
             filteredIds={aiSearchFilter}
+            authorProfiles={isDemoMode ? DEMO_PROFILES_BY_ID : undefined}
           />
         )}
       </main>
+
+      {hasAtlasAccess && isDemoMode && (
+        <aside
+          className={`atlas-scope-board ${showOnlyMine ? 'is-mine' : 'is-circle'}`}
+          data-tour="atlas-board"
+          aria-live="polite"
+          aria-label={showOnlyMine ? 'Mine view showing only your pins' : 'Circle view showing your pins and friend pins'}
+        >
+          <div className="atlas-scope-board-heading">
+            <span>Visible on this Atlas</span>
+            <strong>{showOnlyMine ? 'Mine · personal focus' : 'Circle · shared world'}</strong>
+          </div>
+          <div className="atlas-scope-board-counts">
+            <span><i className="is-own" /> <b>{personalAtlasEntries.length}</b> my pins</span>
+            {!showOnlyMine && <span><i className="is-friend" /> <b>{friendPinCount}</b> friend pins</span>}
+            <small>{showOnlyMine ? 'Friends are hidden' : `${atlasEntries.length} pins total`}</small>
+          </div>
+        </aside>
+      )}
 
       {!hasAtlasAccess && (
         <LandingPage onGetStarted={() => setIsAuthModalOpen(true)} onPreviewDemo={enterDemoAtlas} />
@@ -901,7 +1093,7 @@ function App() {
 
       {/* 5. One coordinated Atlas dock keeps map utilities and creation actions
           in a single collision-free zone. */}
-      <div className="atlas-dock" role="toolbar" aria-label="Atlas controls">
+      <div className="atlas-dock" role="toolbar" aria-label="Atlas controls" data-tour="nexus-add">
         <button
           type="button"
           onClick={() => setViewMode((current) => current === 'globe' ? 'map' : 'globe')}
@@ -911,26 +1103,6 @@ function App() {
         >
           {viewMode === 'globe' ? <MapIcon size={18} /> : <Globe2 size={18} />}
           <span>{viewMode === 'globe' ? '2D map' : '3D globe'}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            const nextHeatmapState = !isHeatmapMode;
-            setIsHeatmapMode(nextHeatmapState);
-            if (nextHeatmapState) {
-              setShowOnlyMine(true);
-              setViewMode('globe');
-              setSelectedEntry(null);
-            }
-          }}
-          className={`atlas-dock-action atlas-heat-action ${isHeatmapMode ? 'is-active' : ''}`}
-          aria-pressed={isHeatmapMode}
-          aria-label="Toggle personal travel density"
-          title={isHeatmapMode ? 'Turn off personal travel density' : 'Show where your memories cluster'}
-        >
-          <Flame size={18} />
-          <span>Density</span>
         </button>
 
         <span className="atlas-dock-divider" aria-hidden="true" />
@@ -1043,6 +1215,10 @@ function App() {
 
       {user && profile && profile.onboardingCompleted !== true && (
         <ProfileSetupModal profile={profile} onComplete={() => undefined} />
+      )}
+
+      {hasAtlasAccess && isDemoMode && (
+        <DemoTour onStepChange={prepareDemoTourStep} />
       )}
 
     </div>

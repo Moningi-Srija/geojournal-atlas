@@ -36,7 +36,7 @@ Record with hard cuts between prepared screens. Keep the cursor still while spea
 | --- | --- | --- |
 | 0:00–0:17 | Direct `?demo=1` Atlas; no clicks | “Hi, I’m Srija Moningi, a 2025 IIT Bombay Computer Science graduate, and I’ve spent the past year working as a Platform Software Engineer at Oracle. I love building AI products that make everyday data feel meaningful—and that’s what led me to create GeoJournal.” |
 | 0:17–0:26 | Hold on the populated globe | “If your journeys live in a paper journal, disappear inside Google Photos, or sit as pins on a wall map, GeoJournal is gold for you.” |
-| 0:26–0:37 | **Circle** → point to `17 visible pins` → **Mine** → rotate globe | “It turns those fragments into one living 3D Memory Atlas. Circle brings trusted explorers onto my globe in a different color; Mine returns to only my memories.” |
+| 0:26–0:37 | **Circle** → point to the scope board showing `17 mine + 10 friends = 27` → **Mine** → point to `17 memories · friends hidden` → rotate globe | “It turns those fragments into one living 3D Memory Atlas. Circle brings ten trusted-explorer memories onto my seventeen in a different color; Mine returns to only my memories.” |
 | 0:37–0:48 | Hard cut to **Memories → Sync → Use demo Timeline sample**; accept one row, reject one, then complete **Import** | “A consent-first inbox reads Google Timeline or geotagged Instagram exports. I accept or reject every suggestion, and accepted pins default to private.” |
 | 0:48–0:55 | Hard cut to **Nexus → Trip Fit** with context prefilled | “Nexus connects memory with leave, month, calendar, and budget context to shape the next trip.” |
 | 0:55–1:00 | Hard cut to **Memories → Pro**, annual plan selected | “Dodo Test Mode checkout is validated. Maximem Synap is active, with the private server bridge next.” |
@@ -55,9 +55,9 @@ Open [the direct presentation demo](https://geojournal-atlas-srija-a6b0b.web.app
 
 ### 0:35–1:10 — Core Atlas
 
-**Click path:** **Circle** → point to the legend showing `17 visible pins` and the two pin colors → open one friend pin → close its card → **Mine** → drag the globe → open the Kyoto pin → close its card → **Density** → **2D map** → **3D globe**.
+**Click path:** **Circle** → point to the scope board showing `17 mine + 10 friends = 27` and the two pin colors → open one friend pin → close its card → **Mine** → point to `17 memories · friends hidden` → drag the globe → open the Kyoto pin → close its card → **2D map** → **3D globe**.
 
-**Say:** “This is the core experience running today. Every pin connects a place, date, photographs, and the story behind it. Circle overlays trusted explorers in violet alongside my teal memories, with the author identified on every entry; Mine returns to my personal Atlas. I can move through the world spatially, see my travel density, or switch to a familiar map without losing the memory layer. The interface also adapts to mobile. GeoJournal is not asking travelers to organize another folder; it gives their history a shape they want to return to.”
+**Say:** “This is the core experience running today. Every pin connects a place, date, photographs, and the story behind it. Circle overlays ten trusted-explorer memories in violet alongside my seventeen teal memories, with the author identified on every entry; Mine returns to my personal Atlas and clearly hides friend pins. I can move through the world spatially or switch to a familiar map without losing the memory layer. The interface also adapts to mobile. GeoJournal is not asking travelers to organize another folder; it gives their history a shape they want to return to.”
 
 ### 1:10–1:55 — Solve the empty-map problem
 
@@ -107,11 +107,19 @@ If the prepared invite is absent, stop after showing the visibility and co-trave
 
 | Status | Capabilities |
 | --- | --- |
-| **Live in the build** | Responsive landing and onboarding; populated presentation profile; interactive WebGL globe; `Mine` and `Circle` scopes with 17 visible demo pins across two clearly labelled colors; friend Atlas viewing; 2D map; pins and memory cards; personal density view; Journal, Insights, and Rediscover; current and older Google Timeline JSON parsing; Instagram export JSON parsing when coordinates exist; per-row accept/reject review and completed local demo import; private/public/close-friends visibility; authenticated co-traveler invitations; prepared demo invite; local Trip Fit context and `.ics` parsing; achievements, profile themes, seeded Inspiration examples; Atlas Persona derivation and style switching; Monthly/Annual Pro selector. |
+| **Live in the build** | Responsive landing and onboarding; populated presentation profile; optional six-step demo tour; interactive WebGL globe; `Mine` scope with 17 personal memories and `Circle` scope with those 17 plus 10 friend memories (27 total), across two clearly labelled colors; friend Atlas viewing; 2D map; pins and memory cards; Journal, Insights, and Rediscover; current and older Google Timeline JSON parsing; Instagram export JSON parsing when coordinates exist; per-row accept/reject review and completed local demo import; private/public/close-friends visibility; authenticated co-traveler invitations; prepared demo invite; local Trip Fit context and `.ics` parsing; achievements, profile themes, seeded Inspiration examples; Atlas Persona derivation and style switching; Monthly/Annual Pro selector. |
 | **Conditional or sandboxed** | OpenAI-enhanced semantic search and Nexus require a valid configured API key and model access; both have presentation-safe labelled fallbacks. Cloud-persisted imports and real social collaboration require authentication and Firebase access. Dodo Monthly, Annual, and Kyoto Test Mode links are configured and no real charge is possible. The presentation account uses explicitly seeded people, stories, shared trips, and local memories to make the interaction contracts repeatable on stage. |
 | **External proof, not yet app data flow** | Dodo Test Mode catalog and hosted checkout handoff are validated. The `GeoJournal Nexus` Maximem Synap B2C instance is active. The browser app does not contain a Synap secret and does not send private memories there. |
 | **Presentation preview** | Creator expedition inventory, trip-group advertising, seller publishing, promoted-placement operations, fulfilment, creator payouts, and AI image generation. The Kyoto checkout is real Test Mode; the product delivery workflow is not. |
-| **Roadmap** | Production Dodo checkout with verified business, webhooks, and entitlements; server-side Maximem ingestion/retrieval with consent, deletion, and graceful fallback; direct provider connections where platform permissions allow; automatic public/office-holiday and leave-system sync; live travel inventory; saved AI-generated travel portraits; PWA and App Store/Play Store releases. |
+| **Roadmap** | Production Dodo checkout with verified business, webhooks, and entitlements; server-side Maximem ingestion/retrieval with consent, deletion, and graceful fallback; direct provider connections where platform permissions allow; automatic public/office-holiday and leave-system sync; live travel inventory; saved AI-generated travel portraits; Travel Quests; multi-person Trip Rooms; PWA and App Store/Play Store releases; followed-explorer public-post notifications that deep-link to the exact memory pin. |
+
+## Future goals: Travel Quests and Trip Rooms
+
+These are **roadmap concepts, not capabilities in today’s build**.
+
+- **Travel Quests:** premium, collectible goals for visiting the Seven Wonders, the 12 Jyotirlingas, and the 12 Pushkarams, alongside annual trip targets and seasonal challenges. The longer-term system can invite travelers to suggest new quests and let the community vote on which badges should be created next.
+- **Trip Rooms:** a shared conversation for two or more co-travelers, with Nexus helping the group combine preferences, memories, dates, and budgets. This is roadmap-only; today’s build demonstrates co-traveler invitations and accepted shared memories, not live group chat.
+- **Mobile social alerts:** when an explorer you follow publishes a public memory, GeoJournal can notify you and deep-link directly to that post and globe pin. This is roadmap-only; today’s build demonstrates the following graph and public memories, not push delivery.
 
 ## Google Timeline export instructions
 
@@ -190,8 +198,8 @@ Labels can vary by Android manufacturer and Google Maps version. GeoJournal acce
 - [ ] Run `npm run build` and `npm run lint`; resolve errors before recording.
 - [ ] Test the deployed URL in a fresh Chromium tab at 100% zoom and at a mobile width.
 - [ ] Confirm the direct [`?demo=1` URL](https://geojournal-atlas-srija-a6b0b.web.app/?demo=1) opens a populated Atlas without sign-in.
-- [ ] In a fresh demo session, confirm **Mine** shows the personal Atlas and **Circle** shows `17 visible pins`, with teal personal pins and violet friend pins.
-- [ ] Confirm globe drag, Kyoto pin, **Density**, **2D map**, and return to **3D globe**.
+- [ ] In a fresh demo session, confirm **Mine** shows `17 memories · friends hidden` and **Circle** shows `17 mine + 10 friends = 27`, with teal personal pins and violet friend pins.
+- [ ] Confirm globe drag, Kyoto pin, **2D map**, and return to **3D globe**.
 - [ ] Confirm **Memories → Rediscover** shows **On this day** and **Past Julys**.
 - [ ] Confirm `crimson streets` focuses Kyoto both with and without the API connection.
 - [ ] Confirm both local import samples open the review queue; accept/reject works; and the final demo import completes and adds its accepted pin.

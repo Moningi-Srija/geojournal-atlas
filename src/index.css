@@ -1264,6 +1264,22 @@ dialog.glass-panel {
   font-weight: 600;
 }
 
+.app-scope-switcher button small {
+  min-width: 20px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.58rem;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.app-scope-switcher button.is-active small {
+  color: #dffbf5;
+  background: rgba(114, 214, 194, 0.16);
+}
+
 .app-scope-switcher button:hover,
 .app-scope-switcher button.is-active {
   color: var(--text-1);
@@ -1295,6 +1311,133 @@ dialog.glass-panel {
   gap: 9px;
   padding: 4px 9px 4px 5px;
   text-align: left;
+}
+
+.app-profile-country-badge {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 9px;
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 5px 14px rgba(245, 158, 11, 0.12);
+  font-size: 0.92rem;
+}
+
+.atlas-scope-board {
+  position: fixed;
+  bottom: calc(var(--edge) + 2px + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 45;
+  width: min(390px, calc(100vw - 650px));
+  min-width: 330px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 13px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(114, 214, 194, 0.2);
+  border-radius: 16px;
+  color: var(--text-2);
+  background: linear-gradient(120deg, rgba(8, 16, 22, 0.94), rgba(12, 23, 30, 0.88));
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  pointer-events: none;
+}
+
+.atlas-scope-board.is-circle {
+  border-color: rgba(169, 154, 244, 0.26);
+  background: linear-gradient(120deg, rgba(9, 16, 23, 0.95), rgba(28, 21, 50, 0.86));
+}
+
+.atlas-scope-board-heading {
+  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.atlas-scope-board-heading span {
+  color: var(--text-3);
+  font-size: 0.55rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.atlas-scope-board-heading strong {
+  color: var(--text-1);
+  font-size: 0.76rem;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.atlas-scope-board-counts {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.atlas-scope-board-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+.atlas-scope-board-counts b {
+  color: var(--text-1);
+  font-weight: 780;
+}
+
+.atlas-scope-board-counts i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.atlas-scope-board-counts i.is-own {
+  background: #72d6c2;
+  box-shadow: 0 0 10px rgba(114, 214, 194, 0.72);
+}
+
+.atlas-scope-board-counts i.is-friend {
+  background: #a99af4;
+  box-shadow: 0 0 10px rgba(169, 154, 244, 0.72);
+}
+
+.atlas-scope-board-counts small {
+  flex-basis: 100%;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.58rem;
+  text-align: right;
+}
+
+.atlas-map-tooltip.leaflet-tooltip {
+  padding: 6px 9px;
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(7, 12, 18, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.68rem;
+}
+
+.atlas-map-tooltip.is-mine strong {
+  color: #72d6c2;
+}
+
+.atlas-map-tooltip.is-friend strong {
+  color: #b9adff;
 }
 
 .app-profile-button img,
@@ -3030,6 +3173,12 @@ dialog.glass-panel {
     min-height: 42px;
   }
 
+  .atlas-scope-board {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    width: min(420px, calc(100vw - 20px));
+    min-width: 0;
+  }
+
   .side-panel,
   .side-panel.profile-panel {
     top: var(--topbar-bottom);
@@ -3104,6 +3253,33 @@ dialog.glass-panel {
     width: 34px;
     padding: 0;
     justify-content: center;
+  }
+
+  .app-scope-switcher button small,
+  .app-profile-country-badge {
+    display: none;
+  }
+
+  .atlas-scope-board {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 8px 11px;
+  }
+
+  .atlas-scope-board-heading {
+    min-width: 0;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .atlas-scope-board-counts {
+    justify-content: flex-start;
+  }
+
+  .atlas-scope-board-counts small {
+    flex-basis: auto;
+    margin-left: auto;
   }
 
   .app-utility-button {
@@ -7125,4 +7301,244 @@ dialog.glass-panel {
 @media (prefers-reduced-motion: reduce) {
   .persona-launch-card > button,
   .persona-style-grid > button { transition: none; }
+}
+
+/* Presentation-safe guided tour. It is mounted only for the seeded demo Atlas. */
+.demo-tour-launch {
+  position: fixed;
+  top: calc(var(--topbar-bottom) + 10px);
+  right: calc(var(--edge) + 2px);
+  z-index: 138;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid rgba(169, 154, 244, 0.3);
+  border-radius: 999px;
+  color: #e8e3ff;
+  background: linear-gradient(120deg, rgba(27, 23, 47, 0.94), rgba(10, 18, 24, 0.92));
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.demo-tour-launch:hover {
+  transform: translateY(-1px);
+  border-color: rgba(169, 154, 244, 0.58);
+}
+
+.demo-tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  pointer-events: none;
+}
+
+.demo-tour-spotlight {
+  position: fixed;
+  z-index: 211;
+  border: 1px solid rgba(135, 238, 216, 0.9);
+  border-radius: 16px;
+  background: rgba(114, 214, 194, 0.025);
+  box-shadow:
+    0 0 0 9999px rgba(3, 6, 10, 0.72),
+    0 0 0 4px rgba(114, 214, 194, 0.12),
+    0 0 34px rgba(114, 214, 194, 0.34);
+  pointer-events: none;
+  transition: inset 220ms ease, width 220ms ease, height 220ms ease;
+  animation: demo-tour-focus-pulse 1.8s ease-in-out infinite;
+}
+
+.demo-tour-card {
+  position: fixed;
+  z-index: 212;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 15px;
+  border: 1px solid rgba(169, 154, 244, 0.32);
+  border-top-color: rgba(210, 201, 255, 0.5);
+  border-radius: 19px;
+  color: var(--text-1);
+  background:
+    radial-gradient(circle at 92% 4%, rgba(169, 154, 244, 0.18), transparent 38%),
+    linear-gradient(145deg, rgba(12, 19, 27, 0.985), rgba(14, 18, 31, 0.98));
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+  box-shadow: 0 24px 65px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  pointer-events: auto;
+  outline: none;
+}
+
+.demo-tour-card-topline,
+.demo-tour-card-topline > span,
+.demo-tour-actions,
+.demo-tour-actions > div,
+.demo-tour-back,
+.demo-tour-next {
+  display: flex;
+  align-items: center;
+}
+
+.demo-tour-card-topline {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.demo-tour-card-topline > span {
+  gap: 6px;
+  color: #b9adff;
+  font-size: 0.6rem;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.demo-tour-card-topline > button {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+}
+
+.demo-tour-progress {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  margin: 12px 0 11px;
+}
+
+.demo-tour-progress i {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.demo-tour-progress i.is-active {
+  background: linear-gradient(90deg, var(--atlas), var(--nexus));
+  box-shadow: 0 0 8px rgba(114, 214, 194, 0.32);
+}
+
+.demo-tour-count {
+  color: var(--text-3);
+  font-size: 0.59rem;
+  font-weight: 680;
+}
+
+.demo-tour-card h2 {
+  margin: 4px 0 5px;
+  color: #fff;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 1.28rem;
+  font-weight: 610;
+  letter-spacing: -0.015em;
+}
+
+.demo-tour-card > p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.demo-tour-actions {
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.demo-tour-actions > div { gap: 7px; }
+
+.demo-tour-actions button {
+  min-height: 34px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.63rem;
+  font-weight: 720;
+  cursor: pointer;
+}
+
+.demo-tour-skip {
+  padding: 6px 4px;
+  border: 0;
+  color: var(--text-3);
+  background: transparent;
+}
+
+.demo-tour-back,
+.demo-tour-next {
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+}
+
+.demo-tour-back {
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.demo-tour-back:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.demo-tour-next {
+  min-width: 68px;
+  color: #071411;
+  border-color: rgba(114, 214, 194, 0.5);
+  background: linear-gradient(110deg, #8be2d1, #b4a9fa);
+  box-shadow: 0 8px 18px rgba(114, 214, 194, 0.15);
+}
+
+.demo-tour-card button:focus-visible,
+.demo-tour-launch:focus-visible {
+  outline: 2px solid var(--atlas);
+  outline-offset: 2px;
+}
+
+@keyframes demo-tour-focus-pulse {
+  0%, 100% { border-color: rgba(135, 238, 216, 0.72); }
+  50% { border-color: rgba(210, 201, 255, 0.94); }
+}
+
+@media (max-width: 640px) {
+  .demo-tour-launch {
+    top: calc(var(--topbar-bottom) + 7px);
+    right: 10px;
+    min-height: 30px;
+    padding: 6px 9px;
+    font-size: 0.6rem;
+  }
+
+  .demo-tour-spotlight { border-radius: 13px; }
+
+  .demo-tour-card {
+    padding: 13px;
+    border-radius: 17px;
+  }
+
+  .demo-tour-card h2 { font-size: 1.16rem; }
+  .demo-tour-card > p { font-size: 0.66rem; }
+  .demo-tour-actions { margin-top: 11px; padding-top: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-tour-spotlight { animation: none; transition: none; }
+  .demo-tour-launch { transition: none; }
 }

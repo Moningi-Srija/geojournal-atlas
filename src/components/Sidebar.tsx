@@ -15,6 +15,60 @@ interface SidebarProps {
   onOpenProfile?: () => void;
 }
 
+const INDIAN_REGIONS = new Set([
+  'andaman',
+  'andaman and nicobar islands',
+  'andhra pradesh',
+  'arunachal pradesh',
+  'assam',
+  'bihar',
+  'chandigarh',
+  'chhattisgarh',
+  'dadra and nagar haveli and daman and diu',
+  'delhi',
+  'goa',
+  'gujarat',
+  'haryana',
+  'himachal pradesh',
+  'jammu and kashmir',
+  'jharkhand',
+  'karnataka',
+  'kerala',
+  'ladakh',
+  'lakshadweep',
+  'madhya pradesh',
+  'maharashtra',
+  'manipur',
+  'meghalaya',
+  'mizoram',
+  'nagaland',
+  'odisha',
+  'puducherry',
+  'punjab',
+  'rajasthan',
+  'sikkim',
+  'tamil nadu',
+  'telangana',
+  'tripura',
+  'uttar pradesh',
+  'uttarakhand',
+  'west bengal',
+]);
+
+const getEntryCountry = (entry: JournalEntry) => {
+  const explicitCountry = entry.country?.trim();
+  if (explicitCountry) return explicitCountry;
+
+  const locationParts = (entry.locationName || '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const locationSuffix = locationParts.at(-1) || '';
+
+  if (INDIAN_REGIONS.has(locationSuffix.toLowerCase())) return 'India';
+  return locationSuffix || 'Unknown';
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({
   entries,
   selectedEntry,
@@ -49,11 +103,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return '🌐';
   };
 
-  // Group entries by country name parsed from locationName
+  // Prefer structured country metadata, then safely infer from the location label.
   const countryGroups = entries.reduce((groups: { [key: string]: JournalEntry[] }, entry) => {
-    const locationStr = entry.locationName || '';
-    const parts = locationStr.split(',');
-    const country = parts[parts.length - 1]?.trim() || 'Unknown';
+    const country = getEntryCountry(entry);
     if (!groups[country]) {
       groups[country] = [];
     }
@@ -188,6 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={onOpenImport}
                   className="glass-btn hover-glow sidebar-action is-sync"
                   title="Import travel history"
+                  data-tour="sync-import"
                 >
                   <Upload size={14} /> Sync
                 </button>

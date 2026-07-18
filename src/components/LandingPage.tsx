@@ -60,7 +60,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onPrevie
             </div>
 
             <div className="landing-capabilities" aria-label="GeoJournal highlights">
-              {['Memory pins', 'Semantic search', 'Nexus AI', 'Travel heatmaps'].map((capability) => (
+              {['Memory pins', 'Semantic search', 'Nexus AI', 'Country badges'].map((capability) => (
                 <span key={capability}>
                   <i aria-hidden="true" /> {capability}
                 </span>
@@ -89,7 +89,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onPrevie
 
             <div className="landing-atlas-caption">
               <Sparkles size={14} aria-hidden="true" />
-              <span>24 memories connected across 8 countries</span>
+              <span>17 personal memories · 27 with your Circle</span>
             </div>
 
             <article className="landing-memory-card">

@@ -41,7 +41,6 @@ type TakeoutRecord = Record<string, unknown>;
 
 const PREVIEW_LIMIT = 200;
 const DEMO_TAKEOUT_RECORDS: TakeoutRecord[] = [
-  { latitude: 48.8584, longitude: 2.2945, timestamp: '2025-06-14T10:30:00Z', locationName: 'Eiffel Tower', country: 'France', category: 'culture' },
   { latitude: 35.6764, longitude: 139.65, timestamp: '2025-04-02T08:15:00Z', locationName: 'Tokyo', country: 'Japan', category: 'city' },
   { latitude: -8.4095, longitude: 115.1889, timestamp: '2024-12-20T07:00:00Z', locationName: 'Ubud, Bali', country: 'Indonesia', category: 'nature' },
   { latitude: 40.758, longitude: -73.9855, timestamp: '2024-09-05T18:45:00Z', locationName: 'Times Square', country: 'United States', category: 'city' },

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import type { GlobeMethods } from 'react-globe.gl';
-import { Flame, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import type { JournalEntry, UserProfile } from '../types';
 
 interface GlobeViewProps {
@@ -9,11 +9,9 @@ interface GlobeViewProps {
   selectedEntry: JournalEntry | null;
   onSelectEntry: (entry: JournalEntry | null) => void;
   filteredIds?: string[] | null;
-  isHeatmapMode?: boolean;
   initialFocusEntry?: JournalEntry | null;
   currentUserId?: string;
   authorProfiles?: Record<string, UserProfile>;
-  showOwnershipLegend?: boolean;
 }
 
 export function GlobeView({
@@ -21,19 +19,13 @@ export function GlobeView({
   selectedEntry,
   onSelectEntry,
   filteredIds = null,
-  isHeatmapMode = false,
   initialFocusEntry = null,
   currentUserId,
   authorProfiles = {},
-  showOwnershipLegend = false,
 }: GlobeViewProps) {
   const globeRef = useRef<GlobeMethods>(null as unknown as GlobeMethods);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
   const containerRef = useRef<HTMLDivElement>(null);
-  const matchingCount = filteredIds === null
-    ? entries.length
-    : entries.filter((entry) => filteredIds.includes(entry.id)).length;
-
   const configureGlobeQuality = () => {
     if (!globeRef.current) return;
 
@@ -123,17 +115,6 @@ export function GlobeView({
     }
   }, [filteredIds, entries]);
 
-  useEffect(() => {
-    if (!isHeatmapMode || entries.length === 0 || !globeRef.current) return;
-    const firstMemory = entries[0];
-    globeRef.current.controls().autoRotate = false;
-    globeRef.current.pointOfView({
-      lat: firstMemory.lat,
-      lng: firstMemory.lng,
-      altitude: 1.35,
-    }, 900);
-  }, [isHeatmapMode, entries]);
-
   // Initial animation
   useEffect(() => {
     if (globeRef.current) {
@@ -164,32 +145,12 @@ export function GlobeView({
         rendererConfig={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         globeCurvatureResolution={2}
         onGlobeReady={configureGlobeQuality}
-        // Switch to dark topology for heatmap, else use satellite tiles
-        globeImageUrl={isHeatmapMode ? "//unpkg.com/three-globe/example/img/earth-dark.jpg" : null}
+        globeImageUrl={null}
         bumpImageUrl={null}
-        globeTileEngineUrl={isHeatmapMode ? undefined : (x, y, level) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${level}/${y}/${x}`}
+        globeTileEngineUrl={(x, y, level) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${level}/${y}/${x}`}
         backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-        
-        // Render Heatmap Rings or Standard HTML Pins
-        ringsData={isHeatmapMode ? pinsData : []}
-        ringColor={(d: any) => (t: number) => d.isFilteredOut
-          ? `rgba(148, 163, 184, ${0.12 * (1 - t)})`
-          : `rgba(244, 63, 94, ${0.86 * (1 - t)})`}
-        ringMaxRadius={(d: any) => d.isFilteredOut ? 0.9 : 3}
-        ringPropagationSpeed={(d: any) => d.isFilteredOut ? 0.7 : 2}
-        ringRepeatPeriod={(d: any) => d.isFilteredOut ? 2200 : 850}
 
-        // Small interactive cores keep heatmap memories selectable.
-        pointsData={isHeatmapMode ? pinsData : []}
-        pointColor={(d: any) => d.isFilteredOut ? '#64748b' : d.color}
-        pointAltitude={0.012}
-        pointRadius={(d: any) => d.isFilteredOut ? 0.055 : (selectedEntry?.id === d.id ? 0.2 : 0.14)}
-        pointResolution={12}
-        pointLabel={(d: any) => `${d.authorLabel} · ${d.title}`}
-        onPointClick={(d: any) => activateEntry(d.entry)}
-        pointsTransitionDuration={350}
-
-        htmlElementsData={isHeatmapMode ? [] : pinsData}
+        htmlElementsData={pinsData}
         htmlElement={(d: any) => {
           const el = document.createElement('div');
           el.className = [
@@ -233,32 +194,9 @@ export function GlobeView({
         }}
         htmlTransitionDuration={500}
         
-        atmosphereColor={isHeatmapMode ? "#ff9e77" : "#72d6c2"}
+        atmosphereColor="#72d6c2"
         atmosphereAltitude={0.12}
       />
-
-      {isHeatmapMode && entries.length > 0 && (
-        <div className="globe-mode-hud" role="status" aria-live="polite">
-          <Flame size={14} color="#fb7185" aria-hidden="true" />
-          <strong>Personal travel density</strong>
-          <span>
-            {filteredIds === null
-              ? `${entries.length} active ${entries.length === 1 ? 'memory' : 'memories'}`
-              : matchingCount > 0
-                ? `${matchingCount} search ${matchingCount === 1 ? 'match' : 'matches'} highlighted`
-                : 'No search matches — hotspots are dimmed'}
-          </span>
-          <span style={{ color: 'rgba(255,255,255,0.42)' }}>· Click a core to open</span>
-        </div>
-      )}
-
-      {showOwnershipLegend && entries.length > 0 && (
-        <div className="globe-ownership-legend" role="status" aria-label="Atlas pin colours">
-          <span><i className="is-own" /> Your memories</span>
-          <span><i className="is-friend" /> Explorer Circle</span>
-          <small>{entries.length} visible pins</small>
-        </div>
-      )}
 
       {entries.length === 0 && (
         <div className="globe-empty-state">

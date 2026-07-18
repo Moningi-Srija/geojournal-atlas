@@ -1,9 +1,9 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { JournalEntry } from '../types';
+import type { JournalEntry, UserProfile } from '../types';
 import { useAuth } from './AuthContext';
 
 interface LeafletMapProps {
@@ -12,6 +12,7 @@ interface LeafletMapProps {
   onSelectEntry: (entry: JournalEntry | null) => void;
   currentUserId?: string;
   filteredIds?: string[] | null;
+  authorProfiles?: Record<string, UserProfile>;
 }
 
 const SelectedMemoryFocus: React.FC<{ entry: JournalEntry | null }> = ({ entry }) => {
@@ -42,6 +43,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   onSelectEntry,
   currentUserId,
   filteredIds = null,
+  authorProfiles = {},
 }) => {
   const { user } = useAuth();
   const viewerUid = currentUserId || user?.uid;
@@ -85,6 +87,8 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         
         {visibleEntries.map(entry => {
           const isMine = entry.authorId === viewerUid;
+          const author = entry.authorId ? authorProfiles[entry.authorId] : undefined;
+          const authorLabel = isMine ? 'You' : (author?.displayName || author?.username || 'Explorer');
           const thumbnailSrc = (entry.photos && entry.photos.length > 0)
             ? entry.photos[0]
             : 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=150&auto=format&fit=crop';
@@ -114,6 +118,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
                 click: () => onSelectEntry(entry),
               }}
             >
+              <Tooltip
+                direction="top"
+                offset={[0, -18]}
+                opacity={1}
+                className={isMine ? 'atlas-map-tooltip is-mine' : 'atlas-map-tooltip is-friend'}
+              >
+                <strong>{authorLabel}</strong> · {entry.title}
+              </Tooltip>
             </Marker>
           );
         })}

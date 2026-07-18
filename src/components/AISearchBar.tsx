@@ -13,6 +13,38 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ entries, onSearchCompl
   const [isActive, setIsActive] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
+  const runOfflineSearch = (searchQuery: string) => {
+    const lowerQuery = searchQuery.toLowerCase();
+    const intentGroups = [
+      ['coffee', 'cafe', 'café', 'latte', 'espresso'],
+      ['hike', 'hiking', 'trek', 'trail', 'mountain', 'summit'],
+      ['beach', 'coast', 'coastal', 'ocean', 'sea', 'shore'],
+      ['city', 'urban', 'architecture', 'building', 'skyline', 'street'],
+    ];
+    const queryTokens = lowerQuery
+      .split(/\s+/)
+      .map((token) => token.replace(/[^a-zà-ÿ]/g, ''))
+      .filter((token) => token.length > 2);
+    const searchTerms = new Set<string>(queryTokens);
+    intentGroups.forEach((group) => {
+      if (group.some((term) => lowerQuery.includes(term))) {
+        group.forEach((term) => searchTerms.add(term));
+      }
+    });
+    if (searchTerms.size === 0) searchTerms.add(lowerQuery);
+
+    const fallbackIds = entries
+      .filter((entry) => {
+        const haystack = `${entry.title} ${entry.body} ${entry.locationName} ${entry.category || ''}`.toLowerCase();
+        return Array.from(searchTerms).some((term) => haystack.includes(term));
+      })
+      .map((entry) => entry.id);
+    onSearchComplete(fallbackIds);
+    setFeedbackMsg(fallbackIds.length > 0
+      ? `Offline index · ${fallbackIds.length} semantic ${fallbackIds.length === 1 ? 'match' : 'matches'} found.`
+      : 'Offline index · no matching memories found.');
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || isSearching) return;
@@ -23,7 +55,10 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ entries, onSearchCompl
 
     try {
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      if (!apiKey) throw new Error("API Key missing");
+      if (!apiKey) {
+        runOfflineSearch(query);
+        return;
+      }
 
       // Build context of pins with their IDs
       const pinsContext = entries.map(e =>
@@ -74,37 +109,8 @@ ${pinsContext}`;
           : 'No matching memories found.');
       }
     } catch (err) {
-      console.error("AI Search Error:", err);
-      // Presentation-safe semantic fallback for common travel intents.
-      const lowerQuery = query.toLowerCase();
-      const intentGroups = [
-        ['coffee', 'cafe', 'café', 'latte', 'espresso'],
-        ['hike', 'hiking', 'trek', 'trail', 'mountain', 'summit'],
-        ['beach', 'coast', 'coastal', 'ocean', 'sea', 'shore'],
-        ['city', 'urban', 'architecture', 'building', 'skyline', 'street'],
-      ];
-      const queryTokens = lowerQuery
-        .split(/\s+/)
-        .map((token) => token.replace(/[^a-zà-ÿ]/g, ''))
-        .filter((token) => token.length > 2);
-      const searchTerms = new Set<string>(queryTokens);
-      intentGroups.forEach((group) => {
-        if (group.some((term) => lowerQuery.includes(term))) {
-          group.forEach((term) => searchTerms.add(term));
-        }
-      });
-      if (searchTerms.size === 0) searchTerms.add(lowerQuery);
-
-      const fallbackIds = entries
-        .filter((entry) => {
-          const haystack = `${entry.title} ${entry.body} ${entry.locationName} ${entry.category || ''}`.toLowerCase();
-          return Array.from(searchTerms).some((term) => haystack.includes(term));
-        })
-        .map(e => e.id);
-      onSearchComplete(fallbackIds);
-      setFeedbackMsg(fallbackIds.length > 0
-        ? `Offline index · ${fallbackIds.length} semantic ${fallbackIds.length === 1 ? 'match' : 'matches'} found.`
-        : 'Offline index · no matching memories found.');
+      console.warn('AI search unavailable; using the offline Atlas index.', err);
+      runOfflineSearch(query);
     } finally {
       setIsSearching(false);
     }

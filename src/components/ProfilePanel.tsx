@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { X, Award, Check, Edit2, Lock, Palette, Sparkles, Trophy } from 'lucide-react';
+import { X, Award, Check, ChevronDown, ChevronUp, Edit2, Lock, Palette, Sparkles, Trophy } from 'lucide-react';
 import type { UserProfile, JournalEntry } from '../types';
 import {
   BADGE_DEFINITIONS,
   getBadgeDefinition,
   getBadgeProgress,
+  getCountryBadgeMilestones,
   getDistinctCountries,
   getEarnedBadgeIds,
 } from '../utils/badges';
@@ -31,6 +32,18 @@ const ATLAS_THEMES: Array<{ id: AtlasTheme; name: string; description: string; s
   { id: 'ember', name: 'Ember', description: 'Warm expedition glow', swatches: ['#f2ca7a', '#ff8566', '#21140f'] },
 ];
 
+const BADGE_ART_POSITIONS: Record<string, string> = {
+  explorer: '0% 0%',
+  trekker: '50% 0%',
+  beach_bum: '100% 0%',
+  city_slicker: '0% 50%',
+  nature_lover: '50% 50%',
+  foodie: '100% 50%',
+  culture_seeker: '0% 100%',
+  shutterbug: '50% 100%',
+  globetrotter: '100% 100%',
+};
+
 export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose, profile, entries, demoMode = false }) => {
   const { updateProfile } = useAuth();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -38,6 +51,7 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose, pro
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [isPersonaOpen, setIsPersonaOpen] = useState(false);
+  const [isTrophyCaseExpanded, setIsTrophyCaseExpanded] = useState(true);
   const [atlasTheme, setAtlasTheme] = useState<AtlasTheme>(() => {
     const stored = localStorage.getItem('geojournal_atlas_theme');
     return stored === 'aurora' || stored === 'ember' ? stored : 'midnight';
@@ -61,6 +75,8 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose, pro
   const earnedBadges = userBadgeIds.map(getBadgeDefinition);
   const earnedAchievementBadges = earnedBadges.filter((badge) => badge.category === 'achievement');
   const passportBadges = earnedBadges.filter((badge) => badge.category === 'country');
+  const countryBadgeMilestones = getCountryBadgeMilestones(ownedEntries);
+  const countryBadgeById = new Map(countryBadgeMilestones.map((badge) => [badge.id, badge]));
   const unearnedBadges = allBadges.filter((badge) => !userBadgeIds.includes(badge.id));
   const countriesVisited = getDistinctCountries(ownedEntries).length;
   const photoCount = ownedEntries.reduce(
@@ -129,6 +145,23 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose, pro
               <div style={{ textAlign: 'center' }}>
                 <h3 style={{ margin: 0, color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>{profile.displayName}</h3>
                 <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '1rem' }}>@{profile.username}</p>
+                {countryBadgeMilestones.length > 0 && (
+                  <div
+                    aria-label={`${countryBadgeMilestones.length} country mastery ${countryBadgeMilestones.length === 1 ? 'badge' : 'badges'}`}
+                    style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '7px', marginTop: '10px' }}
+                  >
+                    {countryBadgeMilestones.map((badge) => (
+                      <span
+                        key={badge.id}
+                        title={`${badge.country} Pathfinder · ${badge.cityCount} cities: ${badge.cities.join(', ')}`}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 9px', borderRadius: '999px', color: '#fef3c7', background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,113,133,0.1))', border: '1px solid rgba(251,191,36,0.38)', boxShadow: '0 6px 16px rgba(245,158,11,0.12)', fontSize: '0.72rem', fontWeight: 750 }}
+                      >
+                        <span role="img" aria-label={`${badge.country} flag`} style={{ fontSize: '1rem' }}>{badge.emoji}</span>
+                        {badge.country} Pathfinder
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -235,9 +268,67 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose, pro
 
           {/* Trophy Case */}
           <div>
-            <h4 style={{ margin: '0 0 16px 0', color: 'rgba(255,255,255,0.7)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Trophy size={16} /> Trophy Case
-            </h4>
+            <div style={{ margin: '0 0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <h4 style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Trophy size={16} /> Trophy Case
+              </h4>
+              <button
+                type="button"
+                onClick={() => setIsTrophyCaseExpanded((expanded) => !expanded)}
+                aria-expanded={isTrophyCaseExpanded}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 9px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.62)', background: 'rgba(255,255,255,0.04)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 650 }}
+              >
+                {isTrophyCaseExpanded ? 'Compact' : 'Show all'}
+                {isTrophyCaseExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </button>
+            </div>
+
+            {!isTrophyCaseExpanded && (
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {earnedAchievementBadges.slice(0, 6).map((badge) => {
+                  const artPosition = BADGE_ART_POSITIONS[badge.id];
+                  return (
+                    <span
+                      key={badge.id}
+                      title={badge.name}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        display: 'grid',
+                        placeItems: 'center',
+                        borderRadius: '50%',
+                        color: badge.color,
+                        backgroundColor: `${badge.color}14`,
+                        backgroundImage: artPosition ? 'url(/atlas-badge-constellation.png)' : undefined,
+                        backgroundSize: artPosition ? '300% 300%' : undefined,
+                        backgroundPosition: artPosition,
+                        border: `1px solid ${badge.color}66`,
+                        boxShadow: `0 0 12px ${badge.color}30`,
+                      }}
+                    >
+                      {!artPosition && <badge.icon size={17} />}
+                    </span>
+                  );
+                })}
+                {countryBadgeMilestones.slice(0, 4).map((badge) => (
+                  <span key={badge.id} title={`${badge.country} Pathfinder`} style={{ width: '34px', height: '34px', display: 'grid', placeItems: 'center', borderRadius: '50%', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(251,191,36,0.38)', fontSize: '1.05rem' }}>
+                    {badge.emoji}
+                  </span>
+                ))}
+                <strong style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.58)', fontSize: '0.72rem' }}>
+                  {earnedBadges.length} unlocked
+                </strong>
+              </div>
+            )}
+
+            <div style={{ display: isTrophyCaseExpanded ? 'block' : 'none' }}>
+              <div style={{ position: 'relative', height: '190px', marginBottom: '14px', overflow: 'hidden', borderRadius: '18px', border: '1px solid rgba(125,230,211,0.17)', background: '#071018', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+                <img src="/atlas-badge-constellation.png" alt="Nine glowing Atlas achievement medallions" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 43%' }} />
+                <div style={{ position: 'absolute', right: 0, bottom: 0, left: 0, padding: '26px 14px 11px', color: '#dffbf5', background: 'linear-gradient(transparent, rgba(3,8,13,0.94))' }}>
+                  <strong style={{ display: 'block', fontSize: '0.82rem' }}>Your journeys become a collection</strong>
+                  <small style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.67rem' }}>Goals, country mastery and cultural trails · more collections planned</small>
+                </div>
+              </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
               {[
@@ -254,17 +345,20 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose, pro
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
               {/* Earned Badges */}
-              {earnedAchievementBadges.map(badge => (
-                <div key={badge.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: `1px solid ${badge.color}40`, boxShadow: `inset 0 0 20px ${badge.color}10` }}>
-                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${badge.color}`, boxShadow: `0 0 15px ${badge.color}40`, flexShrink: 0 }}>
-                    <badge.icon size={28} color={badge.color} />
+              {earnedAchievementBadges.map(badge => {
+                const artPosition = BADGE_ART_POSITIONS[badge.id];
+                return (
+                  <div key={badge.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: `1px solid ${badge.color}40`, boxShadow: `inset 0 0 20px ${badge.color}10` }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.05)', backgroundImage: artPosition ? 'url(/atlas-badge-constellation.png)' : undefined, backgroundSize: artPosition ? '300% 300%' : undefined, backgroundPosition: artPosition, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${badge.color}`, boxShadow: `0 0 18px ${badge.color}48`, flexShrink: 0 }}>
+                      {!artPosition && <badge.icon size={28} color={badge.color} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h5 style={{ margin: '0 0 4px 0', color: badge.color, fontSize: '1.1rem', fontWeight: 'bold' }}>{badge.name}</h5>
+                      <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', lineHeight: 1.4 }}>{badge.description}</p>
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <h5 style={{ margin: '0 0 4px 0', color: badge.color, fontSize: '1.1rem', fontWeight: 'bold' }}>{badge.name}</h5>
-                    <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', lineHeight: 1.4 }}>{badge.description}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Unearned Badges with Progression */}
               {unearnedBadges.map(badge => {
@@ -309,13 +403,22 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose, pro
                 <h5 style={{ margin: '0 0 12px', color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Passport stamps</h5>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                   {passportBadges.map((badge) => (
-                    <div key={badge.id} title={badge.description} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '999px', background: `${badge.color}12`, border: `1px solid ${badge.color}55`, color: badge.color, fontSize: '0.8rem', fontWeight: 600 }}>
-                      <badge.icon size={15} /> {badge.name}
+                    <div key={badge.id} title={badge.description} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', borderRadius: '14px', background: `${badge.color}12`, border: `1px solid ${badge.color}55`, color: badge.color, fontSize: '0.8rem', fontWeight: 650 }}>
+                      <span role="img" aria-label={`${badge.name} flag`} style={{ fontSize: '1.15rem' }}>
+                        {countryBadgeById.get(badge.id)?.emoji ?? '🧭'}
+                      </span>
+                      <span>
+                        <strong style={{ display: 'block', color: '#fef3c7' }}>{badge.name} Pathfinder</strong>
+                        <small style={{ display: 'block', marginTop: '2px', color: 'rgba(255,255,255,0.48)', fontSize: '0.68rem', fontWeight: 500 }}>
+                          {countryBadgeById.get(badge.id)?.cityCount ?? 2} cities mastered
+                        </small>
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
+            </div>
           </div>
 
         </div>

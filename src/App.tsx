@@ -605,9 +605,11 @@ function App() {
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   
   const { user, profile, loading, logout, updateProfile } = useAuth();
+  // Keep the public root URL presentation-safe: `/` always opens the landing
+  // page, while `?demo=1` is the explicit shortcut into the populated Atlas.
+  // Demo mode still remains active in React state after the landing CTA is used.
   const [isDemoMode, setIsDemoMode] = useState(() => (
-    sessionStorage.getItem('geojournal_demo_mode') === 'true'
-    || new URLSearchParams(window.location.search).get('demo') === '1'
+    new URLSearchParams(window.location.search).get('demo') === '1'
   ));
   const visibleProfile = isDemoMode ? DEMO_PROFILE : profile;
   const hasAtlasAccess = Boolean(user || isDemoMode);
@@ -670,9 +672,26 @@ function App() {
 
     const loadPins = async () => {
       if (isDemoMode) {
-        setEntries((current) => current.some((entry) => entry.authorId === DEMO_PROFILE.uid)
-          ? current
-          : [...INITIAL_ENTRIES, ...DEMO_EXTRA_OWN_ENTRIES, DEMO_LISBON_SHARED_ENTRY]);
+        const completeDemoSeed = [
+          ...INITIAL_ENTRIES,
+          ...DEMO_EXTRA_OWN_ENTRIES,
+          DEMO_LISBON_SHARED_ENTRY,
+        ];
+
+        setEntries((current) => {
+          const hasCompleteDemoSeed = DEMO_EXTRA_OWN_ENTRIES.every((seedEntry) => (
+            current.some((entry) => entry.id === seedEntry.id)
+          )) && current.some((entry) => entry.id === DEMO_LISBON_SHARED_ENTRY.id);
+
+          if (hasCompleteDemoSeed) return current;
+
+          // The landing page can preload three public preview memories. Merge by
+          // id so entering the demo upgrades that preview to the full 17-memory
+          // personal Atlas without dropping any in-session additions.
+          return Array.from(
+            new Map([...completeDemoSeed, ...current].map((entry) => [entry.id, entry])).values(),
+          );
+        });
         return;
       }
       try {

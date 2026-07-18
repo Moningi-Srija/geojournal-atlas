@@ -45,13 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               uid: currentUser.uid,
               email: currentUser.email || '',
               displayName: currentUser.displayName || 'New Explorer',
-              username: `user_${currentUser.uid.substring(0, 5)}`,
+              username: '',
               photoURL: currentUser.photoURL || '',
               bio: '',
               isPrivate: true, // private by default per your request
               followersCount: 0,
               followingCount: 0,
-              createdAt: Date.now()
+              createdAt: Date.now(),
+              onboardingCompleted: false,
             };
             await setDoc(profileRef, newProfile);
             setProfile(newProfile);

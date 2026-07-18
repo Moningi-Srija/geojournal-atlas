@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Compass, MapPin, ChevronLeft, ChevronRight, BookOpen, BarChart3 } from 'lucide-react';
-import type { JournalEntry } from '../types';
+import { Search, SearchX, MapPin, MapPinned, ChevronLeft, ChevronRight, BookOpen, BarChart3, Upload, Star, Sparkles } from 'lucide-react';
+import type { JournalEntry, UserProfile } from '../types';
+import { getBadgeDefinition } from '../utils/badges';
 
 interface SidebarProps {
   entries: JournalEntry[];
@@ -8,6 +9,10 @@ interface SidebarProps {
   onSelectEntry: (entry: JournalEntry | null) => void;
   isOpen: boolean;
   onToggle: () => void;
+  onOpenImport?: () => void;
+  onOpenPro?: () => void;
+  profile?: UserProfile | null;
+  onOpenProfile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -16,9 +21,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectEntry,
   isOpen,
   onToggle,
+  onOpenImport,
+  onOpenPro,
+  profile,
+  onOpenProfile,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'journal' | 'analytics'>('journal');
+  const [activeTab, setActiveTab] = useState<'journal' | 'analytics' | 'rediscover'>('journal');
   const [expandedCountries, setExpandedCountries] = useState<{ [key: string]: boolean }>({});
 
   const getCountryFlagEmoji = (countryName: string): string => {
@@ -85,27 +94,71 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
   };
 
+  const today = new Date();
+  const currentMonthName = today.toLocaleDateString('en-US', { month: 'long' });
+  const datedEntries = entries
+    .filter((entry) => Number.isFinite(entry.date) && entry.date < today.getTime())
+    .sort((first, second) => second.date - first.date);
+  const usedRediscoverIds = new Set<string>();
+  const claimRediscoverEntries = (matches: JournalEntry[]) => matches.filter((entry) => {
+    if (usedRediscoverIds.has(entry.id)) return false;
+    usedRediscoverIds.add(entry.id);
+    return true;
+  });
+  const onThisDayEntries = claimRediscoverEntries(datedEntries.filter((entry) => {
+    const date = new Date(entry.date);
+    return date.getFullYear() < today.getFullYear()
+      && date.getMonth() === today.getMonth()
+      && date.getDate() === today.getDate();
+  }));
+  const pastMonthEntries = claimRediscoverEntries(datedEntries.filter((entry) => {
+    const date = new Date(entry.date);
+    return date.getFullYear() < today.getFullYear() && date.getMonth() === today.getMonth();
+  }));
+  const yearAgoEntries = claimRediscoverEntries(datedEntries.filter((entry) => {
+    const date = new Date(entry.date);
+    const monthDistance = (today.getFullYear() - date.getFullYear()) * 12
+      + today.getMonth()
+      - date.getMonth();
+    return monthDistance >= 11 && monthDistance <= 13;
+  }));
+  const anniversarySections = [
+    {
+      id: 'on-this-day',
+      title: 'On this day',
+      subtitle: `From ${today.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} in years past`,
+      entries: onThisDayEntries,
+    },
+    {
+      id: 'past-months',
+      title: `Past ${currentMonthName}s`,
+      subtitle: `More moments from ${currentMonthName} in earlier years`,
+      entries: pastMonthEntries,
+    },
+    {
+      id: 'a-year-ago',
+      title: 'A year ago',
+      subtitle: 'Memories from roughly 11–13 months ago',
+      entries: yearAgoEntries,
+    },
+  ].filter((section) => section.entries.length > 0);
+  const rediscoverSections = anniversarySections.length > 0
+    ? anniversarySections
+    : entries.length > 0
+      ? [{
+          id: 'from-your-atlas',
+          title: 'From your Atlas',
+          subtitle: 'No exact anniversary today — a recent selection from your real memories',
+          entries: [...entries].sort((first, second) => second.date - first.date).slice(0, 8),
+        }]
+      : [];
+
   return (
     <>
       {/* Toggle button */}
       <button
         onClick={onToggle}
-        className="glass-panel"
-        style={{
-          position: 'absolute',
-          top: '100px',
-          left: isOpen ? '380px' : '24px',
-          zIndex: 15,
-          padding: '12px',
-          borderRadius: '12px',
-          cursor: 'pointer',
-          color: '#fff',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
+        className={`glass-panel atlas-sidebar-toggle ${isOpen ? 'is-open' : 'is-closed'}`}
         aria-label={isOpen ? "Collapse Sidebar" : "Expand Sidebar"}
       >
         {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
@@ -113,79 +166,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar container */}
       <div
-        className="glass-panel"
-        style={{
-          position: 'absolute',
-          top: '100px',
-          bottom: '24px',
-          left: isOpen ? '24px' : '-360px',
-          width: '340px',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          overflow: 'hidden',
-          borderRadius: '20px',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-        }}
+        className={`glass-panel atlas-sidebar ${isOpen ? 'is-open' : 'is-closed'}`}
       >
         {/* Sidebar Header */}
-        <div
-          style={{
-            padding: '24px 20px 16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          }}
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <div
-              style={{
-                backgroundColor: 'rgba(0, 136, 255, 0.15)',
-                color: 'var(--accent-cyan)',
-                padding: '8px',
-                borderRadius: '10px',
-              }}
-            >
-              <Compass size={20} className="animate-spin" style={{ animationDuration: '20s' }} />
-            </div>
+        <div className="sidebar-head">
+          <div className="sidebar-title-row">
             <div>
-              <h1
-                style={{
-                  fontFamily: 'Outfit, sans-serif',
-                  fontWeight: 700,
-                  fontSize: '1.25rem',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                Memory Atlas
-              </h1>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                {entries.length} {entries.length === 1 ? 'memory' : 'memories'} captured
+              <span className="sidebar-kicker">
+                Personal atlas · {entries.length} {entries.length === 1 ? 'memory' : 'memories'}
+              </span>
+              <h1>Your memories</h1>
+              <p>
+                {entries.length === 0
+                  ? 'Your next story starts somewhere on the map.'
+                  : 'A living collection of places and moments worth returning to.'}
               </p>
+            </div>
+            <div className="sidebar-actions">
+              {onOpenImport && (
+                <button
+                  onClick={onOpenImport}
+                  className="glass-btn hover-glow sidebar-action is-sync"
+                  title="Import travel history"
+                >
+                  <Upload size={14} /> Sync
+                </button>
+              )}
+              {onOpenPro && (
+                <button
+                  onClick={onOpenPro}
+                  className="glass-btn hover-glow sidebar-action is-pro"
+                  title="Preview GeoJournal Pro"
+                >
+                  <Star size={14} fill="#fbbf24" /> Pro
+                </button>
+              )}
             </div>
           </div>
 
           {/* Navigation Tab Selector */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', background: 'rgba(255, 255, 255, 0.02)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <div className="sidebar-segments">
             <button
               type="button"
               onClick={() => setActiveTab('journal')}
-              style={{
-                flex: 1,
-                padding: '6px',
-                fontSize: '0.8rem',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontFamily: 'Outfit, sans-serif',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                color: activeTab === 'journal' ? '#fff' : 'var(--text-secondary)',
-                background: activeTab === 'journal' ? 'rgba(0, 136, 255, 0.2)' : 'transparent',
-                transition: 'all 0.2s ease',
-              }}
+              aria-pressed={activeTab === 'journal'}
+              className={activeTab === 'journal' ? 'is-active' : ''}
             >
               <BookOpen size={12} />
               Journal
@@ -193,65 +218,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('analytics')}
-              style={{
-                flex: 1,
-                padding: '6px',
-                fontSize: '0.8rem',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontFamily: 'Outfit, sans-serif',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                color: activeTab === 'analytics' ? '#fff' : 'var(--text-secondary)',
-                background: activeTab === 'analytics' ? 'rgba(0, 136, 255, 0.2)' : 'transparent',
-                transition: 'all 0.2s ease',
-              }}
+              aria-pressed={activeTab === 'analytics'}
+              className={activeTab === 'analytics' ? 'is-active' : ''}
             >
               <BarChart3 size={12} />
-              Analytics
+              Insights
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('rediscover')}
+              aria-pressed={activeTab === 'rediscover'}
+              className={activeTab === 'rediscover' ? 'is-active' : ''}
+            >
+              <Sparkles size={12} />
+              Rediscover
             </button>
           </div>
 
           {/* Search bar (only for Journal tab) */}
           {activeTab === 'journal' && (
-            <div className="relative">
-              <Search
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)',
-                }}
-              />
+            <div className="sidebar-search">
+              <Search size={16} />
               <input
                 type="text"
-                className="glass-input w-full"
+                className="glass-input"
                 placeholder="Search memories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '36px', width: '100%' }}
+                aria-label="Search journal memories"
               />
             </div>
           )}
         </div>
 
         {/* Entries list or Country Analytics */}
-        <div
-          className="overflow-y-auto"
-          style={{
-            flex: 1,
-            padding: '16px 12px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-          }}
-        >
+        <div className="sidebar-content">
           {activeTab === 'journal' ? (
             filteredEntries.length > 0 ? (
               filteredEntries.map((entry) => {
@@ -260,59 +261,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div
                     key={entry.id}
                     onClick={() => onSelectEntry(entry)}
-                    className={`glass-panel-interactive`}
-                    style={{
-                      padding: '12px',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      gap: '12px',
-                      alignItems: 'center',
-                      background: isSelected ? 'rgba(0, 136, 255, 0.1)' : 'rgba(255,255,255,0.02)',
-                      borderColor: isSelected ? 'var(--accent-blue)' : 'rgba(255,255,255,0.06)',
-                      transition: 'all 0.2s ease',
-                      cursor: 'pointer',
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onSelectEntry(entry);
+                      }
                     }}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    className={`glass-panel-interactive memory-list-item ${isSelected ? 'is-selected' : ''}`}
                   >
-                    {/* Small circular photo thumbnail */}
+                    {/* Editorial travel thumbnail */}
                     <img
                       src={(entry.photos && entry.photos.length > 0) ? entry.photos[0] : 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=150&auto=format&fit=crop'}
                       alt={entry.title}
-                      style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: isSelected ? '2px solid var(--accent-cyan)' : '2px solid rgba(255, 255, 255, 0.2)',
-                        boxShadow: isSelected ? '0 0 10px rgba(0, 240, 255, 0.4)' : 'none',
-                      }}
+                      className="memory-thumb"
                     />
 
                     {/* Text details */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h4
-                        style={{
-                          fontFamily: 'Outfit, sans-serif',
-                          fontWeight: 600,
-                          fontSize: '0.92rem',
-                          color: isSelected ? 'var(--accent-cyan)' : '#fff',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          marginBottom: '2px',
-                        }}
-                      >
+                    <div className="memory-copy">
+                      <h4>
                         {entry.title}
                       </h4>
-                      <div className="flex items-center gap-1" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        <MapPin size={10} style={{ color: 'var(--accent-cyan)' }} />
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div className="memory-location">
+                        <MapPin size={11} />
+                        <span>
                           {entry.locationName}
                         </span>
                       </div>
                     </div>
 
                     {/* Date marker */}
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', alignSelf: 'flex-start' }}>
+                    <span className="memory-date">
                       {formatDate(entry.date)}
                     </span>
                   </div>
@@ -325,35 +306,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  height: '200px',
+                  minHeight: '220px',
                   textAlign: 'center',
-                  color: 'var(--text-muted)',
-                  padding: '20px',
+                  color: 'var(--text-secondary)',
+                  padding: '24px 20px',
                   gap: '12px',
+                  background: 'linear-gradient(160deg, rgba(59,130,246,0.07), rgba(139,92,246,0.035))',
+                  border: '1px solid rgba(96,165,250,0.12)',
+                  borderRadius: '16px',
                 }}
               >
                 <div
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                    backgroundColor: searchQuery ? 'rgba(139,92,246,0.1)' : 'rgba(59,130,246,0.1)',
                     padding: '16px',
                     borderRadius: '50%',
                     border: '1px solid rgba(255,255,255,0.05)',
                   }}
                 >
-                  <BookOpen size={24} />
+                  {searchQuery ? <SearchX size={24} color="#c4b5fd" /> : <MapPinned size={24} color="#60a5fa" />}
                 </div>
-                <p style={{ fontSize: '0.85rem' }}>
-                  {searchQuery ? 'No matching memories found.' : 'No memories captured yet.'}
+                <strong style={{ color: '#fff', fontFamily: 'Outfit, sans-serif', fontSize: '0.94rem' }}>
+                  {searchQuery ? 'No memories match' : 'Your Atlas is ready'}
+                </strong>
+                <p style={{ fontSize: '0.76rem', maxWidth: '220px', lineHeight: 1.55 }}>
+                  {searchQuery ? `Try a broader place, title, or journal keyword.` : 'Use the blue + button to capture your first place and bring the globe to life.'}
                 </p>
-                {!searchQuery && (
-                  <p style={{ fontSize: '0.75rem', maxWidth: '200px' }}>
-                    Click the float button in the bottom right corner to add a pin on the globe!
-                  </p>
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery('')} className="glass-btn" style={{ padding: '6px 11px', fontSize: '0.72rem' }}>
+                    Clear search
+                  </button>
                 )}
               </div>
             )
-          ) : (
-            /* Analytics Tab contents */
+          ) : activeTab === 'analytics' ? (
+            /* Insights Tab contents */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <h3 style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', fontWeight: 600 }}>
                 Memories Grouped By Country
@@ -376,6 +363,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {/* Country Header Row */}
                       <div
                         onClick={() => toggleCountry(country)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            toggleCountry(country);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isExpanded}
                         style={{
                           padding: '12px 14px',
                           display: 'flex',
@@ -487,8 +483,140 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
             </div>
+          ) : (
+            <div className="rediscover-feed">
+              <div className="rediscover-hero">
+                <div className="rediscover-hero-icon" aria-hidden="true">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <span className="rediscover-kicker">
+                    {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </span>
+                  <h3>Rediscover your world</h3>
+                  <p>
+                    {anniversarySections.length > 0
+                      ? 'True date matches from journeys already saved in your Atlas.'
+                      : entries.length > 0
+                        ? 'No exact anniversary today, so here is a small selection from your Atlas.'
+                        : 'Save real travel memories and they will return here at meaningful moments.'}
+                  </p>
+                </div>
+              </div>
+
+              {rediscoverSections.length > 0 ? (
+                rediscoverSections.map((section) => (
+                  <section className="rediscover-section" key={section.id} aria-labelledby={`rediscover-${section.id}`}>
+                    <div className="rediscover-section-head">
+                      <div>
+                        <h4 id={`rediscover-${section.id}`}>{section.title}</h4>
+                        <p>{section.subtitle}</p>
+                      </div>
+                      <span className="rediscover-count">
+                        {section.entries.length} {section.entries.length === 1 ? 'memory' : 'memories'}
+                      </span>
+                    </div>
+
+                    <div className="rediscover-list">
+                      {section.entries.map((entry, index) => {
+                        const isSelected = selectedEntry?.id === entry.id;
+                        return (
+                          <div
+                            key={entry.id}
+                            onClick={() => onSelectEntry(entry)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                onSelectEntry(entry);
+                              }
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-pressed={isSelected}
+                            className={`glass-panel-interactive memory-list-item rediscover-card ${index === 0 ? 'is-featured' : ''} ${isSelected ? 'is-selected' : ''}`}
+                          >
+                            <img
+                              src={entry.photos && entry.photos.length > 0
+                                ? entry.photos[0]
+                                : 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=240&auto=format&fit=crop'}
+                              alt={entry.title}
+                              className="memory-thumb"
+                            />
+                            <div className="memory-copy">
+                              <h4>{entry.title}</h4>
+                              <div className="memory-location">
+                                <MapPin size={11} />
+                                <span>{entry.locationName}</span>
+                              </div>
+                            </div>
+                            <time className="memory-date" dateTime={new Date(entry.date).toISOString()}>
+                              {formatDate(entry.date)}
+                            </time>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))
+              ) : (
+                <div className="rediscover-empty">
+                  <MapPinned size={25} aria-hidden="true" />
+                  <strong>Nothing to rediscover yet</strong>
+                  <p>This space only reflects memories you have actually added to your Atlas.</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
+
+        {/* User Profile Section at Bottom */}
+        {profile && (
+          <div
+            onClick={onOpenProfile}
+            onKeyDown={(event) => {
+              if ((event.key === 'Enter' || event.key === ' ') && onOpenProfile) {
+                event.preventDefault();
+                onOpenProfile();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="sidebar-profile hover:bg-white/5 transition-colors"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img
+                src={profile.photoURL || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Jack'}
+                style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-cyan)' }}
+                alt="Profile"
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h4 style={{ margin: 0, color: 'white', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {profile.displayName || 'Explorer'}
+                </h4>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>View Profile</p>
+              </div>
+            </div>
+
+            {/* Display up to 4 earned badges */}
+            {profile.badges && profile.badges.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {profile.badges.slice(0, 4).map(b => {
+                  const bd = getBadgeDefinition(b.id);
+                  return (
+                    <div key={b.id} title={bd.name} style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${bd.color}40` }}>
+                      <bd.icon size={14} color={bd.color} />
+                    </div>
+                  );
+                })}
+                {profile.badges.length > 4 && (
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid rgba(255,255,255,0.1)`, fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                    +{profile.badges.length - 4}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );

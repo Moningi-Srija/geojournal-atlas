@@ -1,79 +1,158 @@
 import { db } from '../firebase';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  deleteDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  query,
+  where,
+  limit,
   getDoc,
   serverTimestamp,
-  updateDoc
+  updateDoc,
+  writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
-import type { JournalEntry, UserProfile, UserBadge } from '../types';
+import type {
+  JournalEntry,
+  MemoryCollaborator,
+  MemoryInvite,
+  MemoryInviteDetails,
+  UserProfile,
+  UserBadge,
+} from '../types';
+import { BADGE_DEFINITIONS, getEarnedBadgeIds } from './badges';
 
 // ==========================================
 // PINS (JOURNAL ENTRIES) SERVICES
 // ==========================================
 
-export const checkAndAwardBadges = async (entry: JournalEntry, userId: string): Promise<UserBadge[]> => {
+export const recalculateUserBadges = async (userId: string): Promise<UserBadge[]> => {
   const userRef = doc(db, 'users', userId);
   const userSnap = await getDoc(userRef);
-  
+
   if (!userSnap.exists()) return [];
-  
+
   const userProfile = userSnap.data() as UserProfile;
   const currentBadges = userProfile.badges || [];
-  const currentBadgeIds = currentBadges.map(b => b.id);
-  
-  const newBadges: UserBadge[] = [];
+  const ownedPinsSnapshot = await getDocs(
+    query(collection(db, 'pins'), where('authorId', '==', userId)),
+  );
+  const ownedEntries = ownedPinsSnapshot.docs.map((pin) => pin.data() as JournalEntry);
+  const earnedIds = getEarnedBadgeIds(ownedEntries);
+  const currentById = new Map(currentBadges.map((badge) => [badge.id, badge]));
+  const managedIds = new Set(Object.keys(BADGE_DEFINITIONS));
+  const legacyBadges = currentBadges.filter(
+    (badge) => !managedIds.has(badge.id) && !badge.id.startsWith('country_'),
+  );
+  const now = Date.now();
+  const calculatedBadges = earnedIds.map(
+    (id): UserBadge => currentById.get(id) ?? { id, earnedAt: now },
+  );
+  const nextBadges = [...legacyBadges, ...calculatedBadges];
+  const newlyAwarded = calculatedBadges.filter((badge) => !currentById.has(badge.id));
 
-  // Check Explorer badge (first pin)
-  if (!currentBadgeIds.includes('explorer')) {
-    newBadges.push({ id: 'explorer', earnedAt: Date.now() });
-  }
+  await updateDoc(userRef, { badges: nextBadges });
+  return newlyAwarded;
+};
 
-  // Check Category badge
-  if (entry.category) {
-    let categoryBadgeId = '';
-    switch (entry.category) {
-      case 'trek': categoryBadgeId = 'trekker'; break;
-      case 'beach': categoryBadgeId = 'beach_bum'; break;
-      case 'city': categoryBadgeId = 'city_slicker'; break;
-      case 'nature': categoryBadgeId = 'nature_lover'; break;
-      case 'food': categoryBadgeId = 'foodie'; break;
-    }
-    if (categoryBadgeId && !currentBadgeIds.includes(categoryBadgeId)) {
-      newBadges.push({ id: categoryBadgeId, earnedAt: Date.now() });
-    }
-  }
+export const checkAndAwardBadges = async (
+  _entry: JournalEntry,
+  userId: string,
+): Promise<UserBadge[]> => recalculateUserBadges(userId);
 
-  // Check Country badge
-  if (entry.country) {
-    const countryBadgeId = `country_${entry.country.replace(/\s+/g, '_')}`;
-    if (!currentBadgeIds.includes(countryBadgeId)) {
-      newBadges.push({ id: countryBadgeId, earnedAt: Date.now() });
-    }
-  }
+export interface ImportProgress {
+  completed: number;
+  total: number;
+  percent: number;
+}
 
-  if (newBadges.length > 0) {
-    await updateDoc(userRef, {
-      badges: [...currentBadges, ...newBadges]
+const IMPORT_BATCH_SIZE = 200;
+
+export const importPinsInBatches = async (
+  entries: JournalEntry[],
+  onProgress?: (progress: ImportProgress) => void,
+) => {
+  if (entries.length === 0) return 0;
+
+  let completed = 0;
+  onProgress?.({ completed, total: entries.length, percent: 0 });
+
+  for (let offset = 0; offset < entries.length; offset += IMPORT_BATCH_SIZE) {
+    const chunk = entries.slice(offset, offset + IMPORT_BATCH_SIZE);
+    const batch = writeBatch(db);
+    chunk.forEach((entry) => {
+      batch.set(doc(db, 'pins', entry.id), entry, { merge: true });
     });
-    return newBadges;
+    await batch.commit();
+    completed += chunk.length;
+    onProgress?.({
+      completed,
+      total: entries.length,
+      percent: Math.round((completed / entries.length) * 100),
+    });
   }
-  return [];
+
+  const userId = entries[0]?.authorId;
+  if (userId) {
+    try {
+      await recalculateUserBadges(userId);
+    } catch (error) {
+      console.warn('Pins imported, but badge progress could not be refreshed.', error);
+    }
+  }
+
+  return completed;
 };
 
 export const savePin = async (entry: JournalEntry) => {
   const pinRef = doc(db, 'pins', entry.id);
-  await setDoc(pinRef, entry, { merge: true });
-  
+  const previousPin = await getDoc(pinRef);
+  const previousCollaborators = previousPin.exists()
+    ? ((previousPin.data() as JournalEntry).collaborators || [])
+    : [];
+  const collaborators = entry.collaborators || [];
+  const acceptedCollaboratorIds = collaborators
+    .filter((collaborator) => collaborator.status === 'accepted')
+    .map((collaborator) => collaborator.uid);
+  const normalizedEntry: JournalEntry = {
+    ...entry,
+    collaborators,
+    acceptedCollaboratorIds,
+  };
+
+  // The pin remains the only memory record. Invite documents are lightweight inbox
+  // records, one per invitee, so accepting never duplicates a journal entry.
+  const batch = writeBatch(db);
+  batch.set(pinRef, normalizedEntry, { merge: true });
+
+  const currentInviteeIds = new Set(collaborators.map((collaborator) => collaborator.uid));
+  previousCollaborators.forEach((collaborator) => {
+    if (!currentInviteeIds.has(collaborator.uid)) {
+      batch.delete(doc(db, 'memoryInvites', `${entry.id}__${collaborator.uid}`));
+    }
+  });
+
+  collaborators.forEach((collaborator) => {
+    const invite: MemoryInvite = {
+      id: `${entry.id}__${collaborator.uid}`,
+      pinId: entry.id,
+      inviterId: entry.authorId || '',
+      inviteeId: collaborator.uid,
+      status: collaborator.status,
+      memoryTitle: entry.title,
+      locationName: entry.locationName,
+      invitedAt: collaborator.invitedAt,
+      ...(collaborator.respondedAt ? { respondedAt: collaborator.respondedAt } : {}),
+    };
+    batch.set(doc(db, 'memoryInvites', invite.id), invite, { merge: true });
+  });
+
+  await batch.commit();
+
   if (entry.authorId) {
-    return await checkAndAwardBadges(entry, entry.authorId);
+    return await checkAndAwardBadges(normalizedEntry, entry.authorId);
   }
   return [];
 };
@@ -84,23 +163,119 @@ export const deletePin = async (pinId: string) => {
 
 export const fetchPins = async (currentUid: string | undefined, showOnlyMine: boolean) => {
   const pinsRef = collection(db, 'pins');
-  let q;
+  const queries = showOnlyMine && currentUid
+    ? [
+        query(pinsRef, where('authorId', '==', currentUid)),
+        query(pinsRef, where('acceptedCollaboratorIds', 'array-contains', currentUid)),
+      ]
+    : [
+        query(pinsRef, where('visibility', 'in', ['public', 'close_friends'])),
+        ...(currentUid
+          ? [query(pinsRef, where('acceptedCollaboratorIds', 'array-contains', currentUid))]
+          : []),
+      ];
 
-  if (showOnlyMine && currentUid) {
-    // Show only the current user's pins
-    q = query(pinsRef, where('authorId', '==', currentUid), orderBy('date', 'desc'), limit(100));
-  } else {
-    // Show public pins (we can optimize this later to show friends' pins)
-    // For now, we fetch public pins. We will filter private/close friends on the client or via composite indexes
-    q = query(pinsRef, where('visibility', 'in', ['public', 'close_friends']), orderBy('date', 'desc'), limit(100));
-  }
-
-  const snapshot = await getDocs(q);
-  const pins: JournalEntry[] = [];
-  snapshot.forEach(doc => {
-    pins.push(doc.data() as JournalEntry);
+  const snapshots = await Promise.all(queries.map((pinsQuery) => getDocs(pinsQuery)));
+  const pinsById = new Map<string, JournalEntry>();
+  snapshots.forEach((snapshot) => {
+    snapshot.docs.forEach((pinDoc) => {
+      const pin = pinDoc.data() as JournalEntry;
+      pinsById.set(pin.id || pinDoc.id, { ...pin, id: pin.id || pinDoc.id });
+    });
   });
-  return pins;
+
+  return [...pinsById.values()].sort((a, b) => b.date - a.date).slice(0, 100);
+};
+
+export const fetchExplorerPins = async (explorerUid: string) => {
+  const pinsRef = collection(db, 'pins');
+  // Explorer profiles are public views. Querying public pins first avoids ever
+  // reading an explorer's private memories merely to filter them in the client.
+  const publicSnapshot = await getDocs(query(pinsRef, where('visibility', '==', 'public')));
+  return publicSnapshot.docs
+    .map((pinDoc) => {
+      const pin = pinDoc.data() as JournalEntry;
+      return { ...pin, id: pin.id || pinDoc.id };
+    })
+    .filter((pin) => (
+      pin.authorId === explorerUid || pin.acceptedCollaboratorIds?.includes(explorerUid)
+    ))
+    .sort((a, b) => b.date - a.date)
+    .slice(0, 100);
+};
+
+// ==========================================
+// SHARED MEMORY INVITES
+// ==========================================
+
+export const getMemoryInvites = async (currentUid: string): Promise<MemoryInviteDetails[]> => {
+  const snapshot = await getDocs(
+    query(collection(db, 'memoryInvites'), where('inviteeId', '==', currentUid)),
+  );
+  const invites = snapshot.docs.map((inviteDoc) => ({
+    ...(inviteDoc.data() as MemoryInvite),
+    id: inviteDoc.id,
+  }));
+  const inviterIds = [...new Set(invites.map((invite) => invite.inviterId).filter(Boolean))];
+  const inviterSnapshots = await Promise.all(
+    inviterIds.map((inviterId) => getDoc(doc(db, 'users', inviterId))),
+  );
+  const inviters = new Map<string, UserProfile>();
+  inviterSnapshots.forEach((inviterSnapshot) => {
+    if (inviterSnapshot.exists()) {
+      const profile = inviterSnapshot.data() as UserProfile;
+      inviters.set(profile.uid || inviterSnapshot.id, profile);
+    }
+  });
+
+  return invites
+    .map((invite) => ({ ...invite, inviter: inviters.get(invite.inviterId) }))
+    .sort((a, b) => b.invitedAt - a.invitedAt);
+};
+
+export const respondToMemoryInvite = async (
+  currentUid: string,
+  inviteId: string,
+  response: 'accepted' | 'declined',
+) => {
+  const respondedAt = Date.now();
+
+  await runTransaction(db, async (transaction) => {
+    const inviteRef = doc(db, 'memoryInvites', inviteId);
+    const inviteSnapshot = await transaction.get(inviteRef);
+    if (!inviteSnapshot.exists()) {
+      throw new Error('This shared-trip invitation no longer exists.');
+    }
+
+    const invite = inviteSnapshot.data() as MemoryInvite;
+    if (invite.inviteeId !== currentUid) {
+      throw new Error('This shared-trip invitation belongs to another explorer.');
+    }
+
+    const pinRef = doc(db, 'pins', invite.pinId);
+    const pinSnapshot = await transaction.get(pinRef);
+    if (!pinSnapshot.exists()) {
+      throw new Error('The memory linked to this invitation is no longer available.');
+    }
+
+    const pin = pinSnapshot.data() as JournalEntry;
+    const collaborators = (pin.collaborators || []).map(
+      (collaborator): MemoryCollaborator => collaborator.uid === currentUid
+        ? { ...collaborator, status: response, respondedAt }
+        : collaborator,
+    );
+    if (!collaborators.some((collaborator) => collaborator.uid === currentUid)) {
+      throw new Error('You are no longer listed as a co-traveler on this memory.');
+    }
+
+    transaction.update(pinRef, {
+      collaborators,
+      acceptedCollaboratorIds: collaborators
+        .filter((collaborator) => collaborator.status === 'accepted')
+        .map((collaborator) => collaborator.uid),
+    });
+    transaction.update(inviteRef, { status: response, respondedAt });
+  });
 };
 
 // ==========================================
@@ -111,9 +286,9 @@ export const sendFollowRequest = async (currentUid: string, targetUid: string) =
   // Check if target user is private
   const targetUserSnap = await getDoc(doc(db, 'users', targetUid));
   const isPrivate = targetUserSnap.exists() ? targetUserSnap.data().isPrivate : true;
-  
+
   const status = isPrivate ? 'requested' : 'following';
-  
+
   // Create relationship document in current user's following subcollection
   await setDoc(doc(db, `users/${currentUid}/following`, targetUid), {
     status,
@@ -143,12 +318,12 @@ export const searchUsers = async (searchTerm: string) => {
   if (!searchTerm) return [];
   const usersRef = collection(db, 'users');
   const q = query(
-    usersRef, 
-    where('username', '>=', searchTerm.toLowerCase()), 
+    usersRef,
+    where('username', '>=', searchTerm.toLowerCase()),
     where('username', '<=', searchTerm.toLowerCase() + '\uf8ff'),
     limit(10)
   );
-  
+
   const snapshot = await getDocs(q);
   const users: UserProfile[] = [];
   snapshot.forEach(doc => {
@@ -166,7 +341,7 @@ export const toggleCloseFriend = async (currentUid: string, followingUid: string
 export const getFollowing = async (currentUid: string) => {
   const followingRef = collection(db, `users/${currentUid}/following`);
   const snapshot = await getDocs(followingRef);
-  
+
   const followingList: any[] = [];
   for (const docSnap of snapshot.docs) {
     const data = docSnap.data();
@@ -181,7 +356,7 @@ export const getFollowing = async (currentUid: string) => {
 export const getFollowers = async (currentUid: string) => {
   const followersRef = collection(db, `users/${currentUid}/followers`);
   const snapshot = await getDocs(followersRef);
-  
+
   const followersList: any[] = [];
   for (const docSnap of snapshot.docs) {
     const data = docSnap.data();

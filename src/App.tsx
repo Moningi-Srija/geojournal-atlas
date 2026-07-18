@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Plus, Compass, User as UserIcon, LogOut, Users, List, MapPin } from 'lucide-react';
-import type { JournalEntry } from './types';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Compass, User as UserIcon, LogOut, Users, List, MapPin, Sparkles, Flame, Globe2, Map as MapIcon, Lightbulb, BookOpen } from 'lucide-react';
+import type { JournalEntry, UserProfile } from './types';
 import { GlobeView } from './components/GlobeView';
 import { LeafletMap } from './components/LeafletMap';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -11,15 +11,324 @@ import { AuthModal } from './components/AuthModal';
 import { SocialPanel } from './components/SocialPanel';
 import { LandingPage } from './components/LandingPage';
 import { ProfilePanel } from './components/ProfilePanel';
+import { ImportDataModal } from './components/ImportDataModal';
+import { AICopilotPanel } from './components/AICopilotPanel';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { AISearchBar } from './components/AISearchBar';
+import { ProfileSetupModal } from './components/ProfileSetupModal';
+import { InspirationPanel } from './components/InspirationPanel';
+import { ExplorerAtlasPanel } from './components/ExplorerAtlasPanel';
 import { useAuth } from './components/AuthContext';
-import { db } from './firebase';
-import { doc, updateDoc } from 'firebase/firestore';
 import { fetchPins, savePin, deletePin as deletePinFirestore } from './utils/firestore';
 
-// Default initial entries to populate on first load so the app looks stunning immediately
+const demoYearsAgo = (years: number, dayOffset = 0) => {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - years);
+  date.setDate(date.getDate() + dayOffset);
+  return date.getTime();
+};
+
+const DEMO_PROFILE: UserProfile = {
+  uid: 'demo-srija',
+  email: 'demo@geojournal.local',
+  displayName: 'Srija',
+  username: 'srijaexplores',
+  photoURL: '/srija-demo-profile.png',
+  bio: 'Collecting places that feel like stories.',
+  isPrivate: false,
+  followersCount: 248,
+  followingCount: 176,
+  createdAt: Date.now(),
+  onboardingCompleted: true,
+  badges: [{ id: 'explorer', earnedAt: Date.now() }],
+};
+
+const DEMO_EXPLORERS: UserProfile[] = [
+  {
+    uid: 'demo-ananya',
+    email: 'ananya@geojournal.local',
+    displayName: 'Ananya Kapoor',
+    username: 'weekendwayfinder',
+    photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Ananya',
+    bio: 'Chasing monsoons, ruins and excellent roadside chai.',
+    isPrivate: false,
+    followersCount: 613,
+    followingCount: 204,
+    createdAt: Date.now(),
+    onboardingCompleted: true,
+  },
+  {
+    uid: 'demo-noah',
+    email: 'noah@geojournal.local',
+    displayName: 'Noah Williams',
+    username: 'slowroads',
+    photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Noah',
+    bio: 'Food markets, long train rides and cities at blue hour.',
+    isPrivate: false,
+    followersCount: 421,
+    followingCount: 189,
+    createdAt: Date.now(),
+    onboardingCompleted: true,
+  },
+  {
+    uid: 'demo-maya',
+    email: 'maya@geojournal.local',
+    displayName: 'Maya Chen',
+    username: 'mountainstamped',
+    photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Maya',
+    bio: 'Mountain weather, tiny cabins and trails worth waking up early for.',
+    isPrivate: false,
+    followersCount: 892,
+    followingCount: 318,
+    createdAt: Date.now(),
+    onboardingCompleted: true,
+  },
+  {
+    uid: 'demo-mateo',
+    email: 'mateo@geojournal.local',
+    displayName: 'Mateo Silva',
+    username: 'coastandcoffee',
+    photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Mateo',
+    bio: 'Coastal towns, local coffee and long walks with no itinerary.',
+    isPrivate: false,
+    followersCount: 734,
+    followingCount: 265,
+    createdAt: Date.now(),
+    onboardingCompleted: true,
+  },
+  {
+    uid: 'demo-amina',
+    email: 'amina@geojournal.local',
+    displayName: 'Amina Okafor',
+    username: 'passportandplates',
+    photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Amina',
+    bio: 'Remembering cities through markets, recipes and conversations.',
+    isPrivate: false,
+    followersCount: 1250,
+    followingCount: 407,
+    createdAt: Date.now(),
+    onboardingCompleted: true,
+  },
+  {
+    uid: 'demo-lena',
+    email: 'lena@geojournal.local',
+    displayName: 'Lena Fischer',
+    username: 'nighttrainnotes',
+    photoURL: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Lena',
+    bio: 'Slow rail journeys, alpine mornings and handwritten station notes.',
+    isPrivate: true,
+    followersCount: 506,
+    followingCount: 144,
+    createdAt: Date.now(),
+    onboardingCompleted: true,
+  },
+];
+
+const DEMO_PROFILES_BY_ID = Object.fromEntries(
+  [DEMO_PROFILE, ...DEMO_EXPLORERS].map((explorer) => [explorer.uid, explorer]),
+) as Record<string, UserProfile>;
+
+const DEMO_FRIEND_ENTRIES: JournalEntry[] = [
+  {
+    id: 'demo-ananya-hampi',
+    authorId: 'demo-ananya',
+    title: 'Sunrise over Hampi',
+    body: 'Climbed before dawn and watched the first light move across boulders, temple towers and banana fields.',
+    photos: ['https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Hampi, Karnataka',
+    lat: 15.335,
+    lng: 76.46,
+    country: 'India',
+    category: 'culture',
+    visibility: 'public',
+    date: Date.now() - 18 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-ananya-goa',
+    authorId: 'demo-ananya',
+    title: 'A quiet corner of South Goa',
+    body: 'A slow afternoon of salt air, a nearly empty beach and a tiny cafe worth returning to.',
+    photos: ['https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Palolem, Goa',
+    lat: 15.0099,
+    lng: 74.0232,
+    country: 'India',
+    category: 'beach',
+    visibility: 'public',
+    date: Date.now() - 72 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-noah-lisbon',
+    authorId: 'demo-noah',
+    title: 'Lisbon after the last tram',
+    body: 'Blue-hour streets, grilled sardines and the sound of music escaping from a tiny doorway in Alfama.',
+    photos: ['https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Lisbon, Portugal',
+    lat: 38.7223,
+    lng: -9.1393,
+    country: 'Portugal',
+    category: 'city',
+    visibility: 'public',
+    date: Date.now() - 33 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-noah-marrakech',
+    authorId: 'demo-noah',
+    title: 'Spice market at golden hour',
+    body: 'A maze of colour, mint tea and a vendor who explained every spice like it was part of his family history.',
+    photos: ['https://images.unsplash.com/photo-1597212618440-806262de4f6b?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Marrakech, Morocco',
+    lat: 31.6295,
+    lng: -7.9811,
+    country: 'Morocco',
+    category: 'food',
+    visibility: 'public',
+    date: Date.now() - 111 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-maya-lofoten',
+    authorId: 'demo-maya',
+    title: 'Midnight sun in Lofoten',
+    body: 'A trail above the fishing villages where the evening simply refused to become night.',
+    photos: ['https://images.unsplash.com/photo-1520769669658-f07657f5a307?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Lofoten, Norway',
+    lat: 68.2088,
+    lng: 13.9156,
+    country: 'Norway',
+    category: 'nature',
+    visibility: 'public',
+    date: Date.now() - 48 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-mateo-cartagena',
+    authorId: 'demo-mateo',
+    title: 'Cartagena in colour',
+    body: 'Balconies covered in flowers, strong coffee and a sunset walk along the old city walls.',
+    photos: ['https://images.unsplash.com/photo-1533699224246-6dc3b3ed3304?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Cartagena, Colombia',
+    lat: 10.391,
+    lng: -75.4794,
+    country: 'Colombia',
+    category: 'culture',
+    visibility: 'public',
+    date: Date.now() - 64 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-amina-zanzibar',
+    authorId: 'demo-amina',
+    title: 'Stone Town supper trail',
+    body: 'Shared coconut bread, grilled seafood and stories with three generations of one family.',
+    photos: ['https://images.unsplash.com/photo-1565552645632-d725f8bfc19a?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Stone Town, Zanzibar',
+    lat: -6.1659,
+    lng: 39.2026,
+    country: 'Tanzania',
+    category: 'food',
+    visibility: 'public',
+    date: Date.now() - 96 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-lena-alps',
+    authorId: 'demo-lena',
+    title: 'First train into the Alps',
+    body: 'Frosted windows, a quiet platform and the first glimpse of the peaks catching morning light.',
+    photos: ['https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Bernese Oberland, Switzerland',
+    lat: 46.5937,
+    lng: 7.9075,
+    country: 'Switzerland',
+    category: 'trek',
+    visibility: 'public',
+    date: Date.now() - 126 * 24 * 60 * 60 * 1000,
+  },
+];
+
+const DEMO_SHARED_INVITE_ENTRY: JournalEntry = {
+  id: 'demo-coorg-shared',
+  authorId: 'demo-ananya',
+  title: 'Monsoon trails in Coorg',
+  body: 'Ananya tagged Srija after a misty forest walk, strong filter coffee and a spectacular wrong turn.',
+  photos: ['https://images.unsplash.com/photo-1593693411515-c20261bcad6e?q=80&w=900&auto=format&fit=crop'],
+  locationName: 'Madikeri, Karnataka',
+  lat: 12.4244,
+  lng: 75.7382,
+  country: 'India',
+  category: 'trek',
+  visibility: 'private',
+  date: Date.now() - 21 * 24 * 60 * 60 * 1000,
+  collaborators: [{
+    uid: DEMO_PROFILE.uid,
+    username: DEMO_PROFILE.username,
+    displayName: DEMO_PROFILE.displayName,
+    photoURL: DEMO_PROFILE.photoURL,
+    status: 'accepted',
+    invitedAt: Date.now() - 42 * 60 * 1000,
+    respondedAt: Date.now(),
+  }],
+  acceptedCollaboratorIds: [DEMO_PROFILE.uid],
+};
+
+const DEMO_LISBON_SHARED_ENTRY: JournalEntry = {
+  id: 'demo-lisbon-shared',
+  authorId: 'demo-noah',
+  title: 'Lisbon night-train reunion',
+  body: 'Noah tagged Srija in a shared memory from the night the group reunited in Lisbon after three years.',
+  photos: ['https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=900&auto=format&fit=crop'],
+  locationName: 'Lisbon, Portugal',
+  lat: 38.7223,
+  lng: -9.1393,
+  country: 'Portugal',
+  category: 'city',
+  visibility: 'private',
+  date: Date.now() - 52 * 24 * 60 * 60 * 1000,
+  collaborators: [{
+    uid: DEMO_PROFILE.uid,
+    username: DEMO_PROFILE.username,
+    displayName: DEMO_PROFILE.displayName,
+    photoURL: DEMO_PROFILE.photoURL,
+    status: 'accepted',
+    invitedAt: Date.now() - 52 * 24 * 60 * 60 * 1000,
+    respondedAt: Date.now() - 51 * 24 * 60 * 60 * 1000,
+  }],
+  acceptedCollaboratorIds: [DEMO_PROFILE.uid],
+};
+
+const DEMO_MEGHALAYA_SHARED_ENTRY: JournalEntry = {
+  id: 'demo-meghalaya-shared',
+  authorId: 'demo-maya',
+  title: 'Cloud roads in Meghalaya',
+  body: 'Maya invited Srija to remember a road trip through living root bridges, rain and endless green valleys.',
+  photos: ['https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=900&auto=format&fit=crop'],
+  locationName: 'Cherrapunji, Meghalaya',
+  lat: 25.2702,
+  lng: 91.732,
+  country: 'India',
+  category: 'nature',
+  visibility: 'private',
+  date: Date.now() - 12 * 24 * 60 * 60 * 1000,
+  collaborators: [{
+    uid: DEMO_PROFILE.uid,
+    username: DEMO_PROFILE.username,
+    displayName: DEMO_PROFILE.displayName,
+    photoURL: DEMO_PROFILE.photoURL,
+    status: 'accepted',
+    invitedAt: Date.now() - 3 * 60 * 60 * 1000,
+    respondedAt: Date.now(),
+  }],
+  acceptedCollaboratorIds: [DEMO_PROFILE.uid],
+};
+
+const DEMO_SHARED_ENTRIES = [
+  DEMO_SHARED_INVITE_ENTRY,
+  DEMO_LISBON_SHARED_ENTRY,
+  DEMO_MEGHALAYA_SHARED_ENTRY,
+];
+
+// Default public entries keep Explore and the anniversary demo visually alive.
 const INITIAL_ENTRIES: JournalEntry[] = [
   {
     id: 'kyoto-1',
+    authorId: DEMO_PROFILE.uid,
     title: 'Autumn in Kyoto',
     body: 'Walking through the historic streets of Gion. The maple leaves have turned a brilliant shade of crimson, contrasting beautifully with the dark wood of the traditional machiya townhouses.',
     photos: [
@@ -30,10 +339,14 @@ const INITIAL_ENTRIES: JournalEntry[] = [
     locationName: 'Kyoto, Japan',
     lat: 35.0116,
     lng: 135.7681,
+    country: 'Japan',
+    category: 'culture',
+    visibility: 'public',
     date: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago
   },
   {
     id: 'paris-1',
+    authorId: DEMO_PROFILE.uid,
     title: 'Seine River Cruise',
     body: 'Watched the sunset behind the Eiffel Tower from the deck of a boat on the Seine. The Eiffel Tower began its sparkling light show just as the stars started appearing in the night sky.',
     photos: [
@@ -44,10 +357,14 @@ const INITIAL_ENTRIES: JournalEntry[] = [
     locationName: 'Paris, France',
     lat: 48.8566,
     lng: 2.3522,
-    date: Date.now() - 15 * 24 * 60 * 60 * 1000, // 15 days ago
+    country: 'France',
+    category: 'city',
+    visibility: 'public',
+    date: demoYearsAgo(2, -5), // Same month in an earlier year for Rediscover
   },
   {
     id: 'nyc-1',
+    authorId: DEMO_PROFILE.uid,
     title: 'Manhattan Skyline View',
     body: 'Looked out over the city from DUMBO in Brooklyn. The Brooklyn Bridge framed the skyscrapers of Lower Manhattan perfectly as the evening lights flickered on.',
     photos: [
@@ -58,8 +375,84 @@ const INITIAL_ENTRIES: JournalEntry[] = [
     locationName: 'New York, USA',
     lat: 40.7128,
     lng: -74.0060,
-    date: Date.now() - 5 * 24 * 60 * 60 * 1000, // 5 days ago
+    country: 'United States',
+    category: 'city',
+    visibility: 'public',
+    date: demoYearsAgo(1), // On this day in an earlier year
   }
+];
+
+const DEMO_EXTRA_OWN_ENTRIES: JournalEntry[] = [
+  {
+    id: 'demo-srija-munnar',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Monsoon morning in Munnar',
+    body: 'Tea gardens disappearing into mist, rain on the cottage roof and a road that looked painted in green.',
+    photos: ['https://images.unsplash.com/photo-1593693411515-c20261bcad6e?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Munnar, Kerala',
+    lat: 10.0889,
+    lng: 77.0595,
+    country: 'India',
+    category: 'nature',
+    visibility: 'private',
+    date: Date.now() - 16 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-ladakh',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Road above the clouds',
+    body: 'A cold ride through Ladakh where every turn revealed another impossible landscape.',
+    photos: ['https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Leh, Ladakh',
+    lat: 34.1526,
+    lng: 77.5771,
+    country: 'India',
+    category: 'trek',
+    visibility: 'public',
+    date: Date.now() - 84 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-bengaluru',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Filter coffee and first ideas',
+    body: 'A tiny Bengaluru cafe, a strong filter coffee and the notebook page where GeoJournal first started taking shape.',
+    photos: ['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Bengaluru, Karnataka',
+    lat: 12.9716,
+    lng: 77.5946,
+    country: 'India',
+    category: 'food',
+    visibility: 'private',
+    date: Date.now() - 7 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-cappadocia',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Balloons before breakfast',
+    body: 'Woke before sunrise to watch the Cappadocia valleys slowly fill with colour and hot-air balloons.',
+    photos: ['https://images.unsplash.com/photo-1528181304800-259b08848526?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Cappadocia, Türkiye',
+    lat: 38.6431,
+    lng: 34.8289,
+    country: 'Türkiye',
+    category: 'nature',
+    visibility: 'public',
+    date: Date.now() - 145 * 24 * 60 * 60 * 1000,
+  },
+  {
+    id: 'demo-srija-singapore',
+    authorId: DEMO_PROFILE.uid,
+    title: 'Harbour lights and hawker stories',
+    body: 'An evening walking from the hawker centre to the bay, collecting recommendations from everyone I met.',
+    photos: ['https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=900&auto=format&fit=crop'],
+    locationName: 'Singapore',
+    lat: 1.3521,
+    lng: 103.8198,
+    country: 'Singapore',
+    category: 'city',
+    visibility: 'public',
+    date: Date.now() - 202 * 24 * 60 * 60 * 1000,
+  },
 ];
 
 function App() {
@@ -69,26 +462,77 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   
-  const { user, profile, loading, logout } = useAuth();
+  const { user, profile, loading, logout, updateProfile } = useAuth();
+  const [isDemoMode, setIsDemoMode] = useState(() => (
+    sessionStorage.getItem('geojournal_demo_mode') === 'true'
+    || new URLSearchParams(window.location.search).get('demo') === '1'
+  ));
+  const visibleProfile = isDemoMode ? DEMO_PROFILE : profile;
+  const hasAtlasAccess = Boolean(user || isDemoMode);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSocialOpen, setIsSocialOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAICopilotOpen, setIsAICopilotOpen] = useState(false);
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [isInspirationOpen, setIsInspirationOpen] = useState(false);
+  const [explorerProfile, setExplorerProfile] = useState<UserProfile | null>(null);
+  const [aiSearchFilter, setAiSearchFilter] = useState<string[] | null>(null);
+  const [isHeatmapMode, setIsHeatmapMode] = useState(false);
   const [showOnlyMine, setShowOnlyMine] = useState(false);
+  const [pinsRefreshKey, setPinsRefreshKey] = useState(0);
   const [viewMode, setViewMode] = useState<'globe' | 'map'>(() => {
     return (localStorage.getItem('geojournal_viewMode') as 'globe' | 'map') || 'globe';
   });
+
+  const atlasEntries = useMemo(() => {
+    if (!isDemoMode) return entries;
+
+    const personalEntries = entries.filter((entry) => (
+      entry.authorId === DEMO_PROFILE.uid
+      || entry.acceptedCollaboratorIds?.includes(DEMO_PROFILE.uid)
+    ));
+    if (showOnlyMine) return personalEntries;
+
+    return Array.from(
+      new Map([...personalEntries, ...DEMO_FRIEND_ENTRIES].map((entry) => [entry.id, entry])).values(),
+    );
+  }, [entries, isDemoMode, showOnlyMine]);
 
   useEffect(() => {
     localStorage.setItem('geojournal_viewMode', viewMode);
   }, [viewMode]);
 
+  useEffect(() => {
+    if (isDemoMode) sessionStorage.setItem('geojournal_demo_mode', 'true');
+  }, [isDemoMode]);
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('geojournal_atlas_theme');
+    document.documentElement.dataset.atlasTheme = ['midnight', 'aurora', 'ember'].includes(storedTheme || '')
+      ? storedTheme || 'midnight'
+      : 'midnight';
+  }, []);
+
   // Fetch entries from Firestore
   useEffect(() => {
+    let cancelled = false;
+
     const loadPins = async () => {
+      if (isDemoMode) {
+        setEntries((current) => current.some((entry) => entry.authorId === DEMO_PROFILE.uid)
+          ? current
+          : [...INITIAL_ENTRIES, ...DEMO_EXTRA_OWN_ENTRIES, DEMO_LISBON_SHARED_ENTRY]);
+        return;
+      }
       try {
         const cloudPins = await fetchPins(user?.uid, showOnlyMine);
-        // If not logged in and no pins, fall back to initial stunning entries just for demo
-        if (!user && cloudPins.length === 0) {
+        if (cancelled) return;
+
+        // Keep the public Explore experience visually alive for a brand-new
+        // account or a presentation environment with no published memories yet.
+        // My Pins intentionally stays empty so the cold-start import flow is real.
+        if (!showOnlyMine && cloudPins.length === 0) {
           setEntries(INITIAL_ENTRIES);
         } else {
           setEntries(cloudPins);
@@ -98,17 +542,31 @@ function App() {
       }
     };
     loadPins();
-  }, [user?.uid, showOnlyMine]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, showOnlyMine, pinsRefreshKey, isDemoMode]);
+
+  const refreshPins = () => {
+    setPinsRefreshKey((current) => current + 1);
+  };
 
   const handleSaveEntry = async (newEntryData: Omit<JournalEntry, 'id' | 'date'> & { id?: string; date?: number }) => {
-    if (!user) {
+    if (!user && !isDemoMode) {
       setIsAuthModalOpen(true);
-      return;
+      throw new Error('Please sign in before saving a memory.');
     }
 
+    // Firestore rejects undefined field values by default. Keep optional fields
+    // truly optional instead of passing them through as `undefined`.
+    const cleanEntryData = Object.fromEntries(
+      Object.entries(newEntryData).filter(([, value]) => value !== undefined)
+    ) as typeof newEntryData;
+
     const entryDataWithAuthor = {
-      ...newEntryData,
-      authorId: user.uid,
+      ...cleanEntryData,
+      authorId: isDemoMode ? DEMO_PROFILE.uid : user!.uid,
     };
 
     let savedEntry: JournalEntry;
@@ -129,8 +587,20 @@ function App() {
       } as JournalEntry;
     }
 
+    if (isDemoMode) {
+      setEntries((prev) => {
+        const exists = prev.some((entry) => entry.id === savedEntry.id);
+        return exists
+          ? prev.map((entry) => entry.id === savedEntry.id ? savedEntry : entry)
+          : [savedEntry, ...prev];
+      });
+      setSelectedEntry(savedEntry);
+      setShowOnlyMine(true);
+      return;
+    }
+
     try {
-      await savePin(savedEntry);
+      const newlyAwardedBadges = await savePin(savedEntry);
       
       // Update local UI state
       setEntries((prev) => {
@@ -141,9 +611,26 @@ function App() {
         return [savedEntry, ...prev];
       });
       setSelectedEntry(savedEntry);
+      // New memories default to private, so keep the presenter/user in the
+      // collection where the freshly saved pin remains visible after reload.
+      setShowOnlyMine(true);
+
+      if (profile && newlyAwardedBadges.length > 0) {
+        const mergedBadges = [...(profile.badges || []), ...newlyAwardedBadges].filter(
+          (badge, index, badges) => badges.findIndex((candidate) => candidate.id === badge.id) === index
+        );
+
+        try {
+          await updateProfile({ badges: mergedBadges });
+        } catch (profileError) {
+          // The memory itself is already safely stored; a profile refresh should
+          // not turn a successful save into a duplicate-producing retry.
+          console.error('Memory saved, but badge display could not be refreshed:', profileError);
+        }
+      }
     } catch (err) {
       console.error('Failed to save pin to cloud:', err);
-      alert('Failed to save to cloud.');
+      throw new Error('Could not save this memory. Please check your connection and try again.');
     }
   };
 
@@ -152,19 +639,13 @@ function App() {
     setEditingEntry(null);
   };
 
-  const handleUpdateAvatar = async (url: string) => {
-    if (!user || !profile) return;
-    try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { photoURL: url });
-      // The profile state will automatically update via the snapshot listener in AuthContext
-    } catch (err) {
-      console.error('Failed to update avatar', err);
-    }
-  };
-
   const handleDeleteEntry = async (id: string) => {
-    if (!user) return;
+    if (isDemoMode && selectedEntry?.id === id && selectedEntry.authorId === DEMO_PROFILE.uid) {
+      setEntries((prev) => prev.filter((entry) => entry.id !== id));
+      setSelectedEntry(null);
+      return;
+    }
+    if (!user || selectedEntry?.id !== id || selectedEntry.authorId !== user.uid) return;
     try {
       await deletePinFirestore(id);
       setEntries((prev) => prev.filter((entry) => entry.id !== id));
@@ -176,138 +657,167 @@ function App() {
     }
   };
 
+  const handleSelectEntry = (entry: JournalEntry | null) => {
+    setIsAICopilotOpen(false);
+    setIsSocialOpen(false);
+    setSelectedEntry(entry);
+  };
+
+  const openNexus = () => {
+    setIsSidebarOpen(false);
+    setSelectedEntry(null);
+    setIsSocialOpen(false);
+    setIsProfileOpen(false);
+    setIsAICopilotOpen(true);
+  };
+
+  const openSocial = () => {
+    setIsSidebarOpen(false);
+    setSelectedEntry(null);
+    setIsAICopilotOpen(false);
+    setIsProfileOpen(false);
+    setIsSocialOpen(true);
+  };
+
+  const openInspiration = () => {
+    setIsSidebarOpen(false);
+    setSelectedEntry(null);
+    setIsAICopilotOpen(false);
+    setIsSocialOpen(false);
+    setIsProfileOpen(false);
+    setIsInspirationOpen(true);
+  };
+
+  const openProfile = () => {
+    setIsSidebarOpen(false);
+    setSelectedEntry(null);
+    setIsAICopilotOpen(false);
+    setIsSocialOpen(false);
+    setIsProfileOpen(true);
+  };
+
+  const openCreate = () => {
+    if (!user && !isDemoMode) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setIsSidebarOpen(false);
+    setSelectedEntry(null);
+    setIsAICopilotOpen(false);
+    setIsSocialOpen(false);
+    setEditingEntry(null);
+    setIsCreateOpen(true);
+  };
+
+  const enterDemoAtlas = () => {
+    sessionStorage.setItem('geojournal_demo_mode', 'true');
+    setIsDemoMode(true);
+    setShowOnlyMine(false);
+    setIsSidebarOpen(true);
+  };
+
+  const exitAtlas = async () => {
+    if (isDemoMode) {
+      sessionStorage.removeItem('geojournal_demo_mode');
+      setIsDemoMode(false);
+      setEntries([]);
+      setSelectedEntry(null);
+      return;
+    }
+    await logout();
+  };
+
   if (loading) {
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#030308] text-white">
-        <div className="relative flex items-center justify-center mb-8">
-          <div className="absolute w-24 h-24 rounded-full border-2 border-white/20 animate-pulse-ring" style={{ animationDelay: '0s' }}></div>
-          <div className="absolute w-24 h-24 rounded-full border-2 border-white/20 animate-pulse-ring" style={{ animationDelay: '0.6s' }}></div>
-          <Compass size={56} className="animate-spin text-white/80" />
+      <div className="app-loading-state">
+        <div className="app-loading-orbit" aria-hidden="true">
+          <div className="app-loading-globe"><Compass size={30} /></div>
+          <i />
         </div>
-        <h2 className="text-2xl font-bold mb-2">Initializing GeoJournal</h2>
-        <p className="text-white/50 text-sm">Securing connection to satellite network...</p>
+        <h2>Opening your Atlas</h2>
+        <p>Bringing your places and stories into view…</p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full" style={{ backgroundColor: '#030308', overflow: 'hidden' }}>
+    <div className="atlas-app-shell relative w-full h-full">
       
       {/* 1. Header Navigation Bar */}
-      {user && (
-        <header
-          className="glass-panel"
-        style={{
-          position: 'absolute',
-          top: '24px',
-          left: '24px',
-          right: '24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 24px',
-          zIndex: 10,
-          borderRadius: '100px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center' }}>
-            <Compass size={24} style={{ animation: 'spin 15s linear infinite' }} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span
-              style={{
-                fontFamily: 'Outfit, sans-serif',
-                fontWeight: 800,
-                fontSize: '1.2rem',
-                letterSpacing: '0.05em',
-                background: 'linear-gradient(to right, #ffffff, var(--accent-cyan))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              GeoJournal
+      {hasAtlasAccess && (
+        <header className="app-topbar">
+          <div className="app-brand" aria-label="GeoJournal 3D Memory Atlas">
+            <span className="app-brand-mark"><Compass size={21} /></span>
+            <span className="app-brand-copy">
+              <strong>GeoJournal</strong>
+              <small><i /> Memory Atlas</small>
             </span>
-            <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              3D Memory Atlas
-            </span>
+            {isDemoMode && <span className="demo-mode-chip">Demo</span>}
           </div>
-        </div>
 
-        {user && (
-          <div className="glass-panel" style={{ display: 'flex', padding: '4px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-            <button 
-              onClick={() => setViewMode('globe')}
-              className={`glass-btn ${viewMode === 'globe' ? 'glass-btn-primary' : ''}`}
-              style={{ padding: '6px 16px', fontSize: '0.85rem' }}
-            >
-              Globe
+          <div className="app-search-zone">
+            <AISearchBar entries={atlasEntries} onSearchComplete={setAiSearchFilter} />
+          </div>
+
+          <div className="app-topbar-actions">
+            <nav className="app-scope-switcher" aria-label="Memory scope">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOnlyMine(false);
+                  setIsHeatmapMode(false);
+                  setSelectedEntry(null);
+                  setAiSearchFilter(null);
+                }}
+                className={!showOnlyMine ? 'is-active' : ''}
+                aria-pressed={!showOnlyMine}
+                title={isDemoMode ? "Show your circle's public memories" : 'Explore public travel memories'}
+              >
+                <List size={15} /> <span>{isDemoMode ? 'Circle' : 'Explore'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOnlyMine(true);
+                  setSelectedEntry(null);
+                  setAiSearchFilter(null);
+                }}
+                className={showOnlyMine ? 'is-active' : ''}
+                aria-pressed={showOnlyMine}
+                title="Show only my memories"
+              >
+                <MapPin size={15} /> <span>Mine</span>
+              </button>
+            </nav>
+
+            <button type="button" onClick={() => setIsSidebarOpen(true)} className="app-utility-button" title="Open memories">
+              <BookOpen size={17} /> <span>Memories</span>
             </button>
-            <button 
-              onClick={() => setViewMode('map')}
-              className={`glass-btn ${viewMode === 'map' ? 'glass-btn-primary' : ''}`}
-              style={{ padding: '6px 16px', fontSize: '0.85rem' }}
-            >
-              Map
+
+            <button type="button" onClick={openSocial} className="app-utility-button" title="Explorer community">
+              <Users size={17} /> <span>People</span>
+            </button>
+
+            <button type="button" onClick={openInspiration} className="app-utility-button inspiration-trigger" title="Memory-led travel inspiration">
+              <Lightbulb size={17} /> <span>Inspire</span>
+            </button>
+
+            <button type="button" onClick={openProfile} className="app-profile-button" title="Open explorer profile">
+              {visibleProfile?.photoURL ? (
+                <img src={visibleProfile.photoURL} alt="" />
+              ) : (
+                <span className="app-avatar-fallback"><UserIcon size={16} /></span>
+              )}
+              <span className="app-profile-copy">
+                <strong>{visibleProfile?.displayName || 'Explorer'}</strong>
+                <small>@{visibleProfile?.username || 'traveler'}</small>
+              </span>
+            </button>
+
+            <button type="button" onClick={() => void exitAtlas()} className="app-icon-button" title={isDemoMode ? 'Exit demo Atlas' : 'Log out'} aria-label={isDemoMode ? 'Exit demo Atlas' : 'Log out'}>
+              <LogOut size={17} />
             </button>
           </div>
-        )}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {user && (
-            <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-xl border border-white/10 animate-in fade-in slide-in-from-right-4 duration-500 backdrop-blur-md shadow-lg shadow-black/20">
-              <button 
-                onClick={() => setIsSocialOpen(true)}
-                className="text-sm px-4 py-2 rounded-lg font-medium transition-all text-white/60 hover:text-white hover:bg-white/10 flex items-center gap-2"
-                title="Social Network"
-              >
-                <Users size={16} /> Social
-              </button>
-              <div className="w-px h-6 bg-white/10 mx-1"></div>
-              <button 
-                onClick={() => setShowOnlyMine(false)}
-                className={`text-sm px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${!showOnlyMine ? 'bg-white/15 text-white shadow-sm' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-              >
-                <List size={16} /> Feed
-              </button>
-              <button 
-                onClick={() => setShowOnlyMine(true)}
-                className={`text-sm px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${showOnlyMine ? 'bg-white/15 text-white shadow-sm' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-              >
-                <MapPin size={16} /> My Pins
-              </button>
-            </div>
-          )}
-
-          {/* Auth Section */}
-          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
-            {user ? (
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end">
-                  <span className="text-sm font-medium text-white">{profile?.displayName || 'Explorer'}</span>
-                  <span className="text-xs text-white/50">@{profile?.username}</span>
-                </div>
-                {profile?.photoURL ? (
-                  <img onClick={() => setIsProfileOpen(true)} src={profile.photoURL} alt="Profile" className="w-8 h-8 rounded-full border border-white/20 cursor-pointer hover:border-white transition-colors" />
-                ) : (
-                  <div onClick={() => setIsProfileOpen(true)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20 cursor-pointer hover:border-white transition-colors">
-                    <UserIcon size={16} className="text-white/70" />
-                  </div>
-                )}
-                <button onClick={logout} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all" title="Logout">
-                  <LogOut size={16} />
-                </button>
-              </div>
-            ) : (
-              <button 
-                onClick={() => setIsAuthModalOpen(true)}
-                className="glass-btn text-sm py-1.5 px-4 font-medium bg-white/5 hover:bg-white/10"
-              >
-                Sign In
-              </button>
-            )}
-          </div>
-        </div>
         </header>
       )}
 
@@ -324,74 +834,117 @@ function App() {
               setViewMode('map');
             }
           }}>
+
             <GlobeView
-              entries={entries}
+              entries={atlasEntries}
               selectedEntry={selectedEntry}
-              onSelectEntry={setSelectedEntry}
+              onSelectEntry={handleSelectEntry}
+              filteredIds={aiSearchFilter}
+              isHeatmapMode={isHeatmapMode}
+              currentUserId={visibleProfile?.uid}
+              authorProfiles={isDemoMode ? DEMO_PROFILES_BY_ID : undefined}
+              showOwnershipLegend={isDemoMode && !showOnlyMine && !isHeatmapMode}
             />
           </ErrorBoundary>
         ) : (
           <LeafletMap
-            entries={entries}
+            entries={atlasEntries}
             selectedEntry={selectedEntry}
-            onSelectEntry={setSelectedEntry}
+            onSelectEntry={handleSelectEntry}
+            currentUserId={visibleProfile?.uid}
+            filteredIds={aiSearchFilter}
           />
         )}
       </main>
 
-      {!user && (
-        <LandingPage onGetStarted={() => setIsAuthModalOpen(true)} />
+      {!hasAtlasAccess && (
+        <LandingPage onGetStarted={() => setIsAuthModalOpen(true)} onPreviewDemo={enterDemoAtlas} />
       )}
 
-      {user && (
+      {hasAtlasAccess && (
         <>
           {/* 3. Left drawer entries list sidebar */}
           <Sidebar
         entries={entries}
         selectedEntry={selectedEntry}
-        onSelectEntry={setSelectedEntry}
+        onSelectEntry={handleSelectEntry}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        onOpenImport={() => setIsImportModalOpen(true)}
+        onOpenPro={() => setIsSubscriptionOpen(true)}
+        profile={visibleProfile}
+        onOpenProfile={openProfile}
       />
 
       {/* 4. selected memory popup details card */}
       <EntryCard
         entry={selectedEntry}
+        author={selectedEntry?.authorId ? DEMO_PROFILES_BY_ID[selectedEntry.authorId] : null}
+        isOwn={selectedEntry?.authorId === visibleProfile?.uid}
         onClose={() => setSelectedEntry(null)}
         onDelete={handleDeleteEntry}
+        canManage={Boolean(
+          selectedEntry
+          && (isDemoMode
+            ? selectedEntry.authorId === DEMO_PROFILE.uid
+            : user && selectedEntry.authorId === user.uid)
+        )}
         onEdit={() => {
-          if (selectedEntry) {
+          const canEditDemoMemory = isDemoMode && selectedEntry?.authorId === DEMO_PROFILE.uid;
+          const canEditCloudMemory = !isDemoMode && user && selectedEntry?.authorId === user.uid;
+          if (selectedEntry && (canEditDemoMemory || canEditCloudMemory)) {
             setEditingEntry(selectedEntry);
             setIsCreateOpen(true);
           }
         }}
       />
 
-      {/* 5. Floating action "+" button to trigger capture form */}
-      <button
-        onClick={() => {
-          if (!user) {
-            setIsAuthModalOpen(true);
-            return;
-          }
-          setIsCreateOpen(true);
-        }}
-        className="glass-btn glass-btn-primary"
-        style={{
-          position: 'absolute',
-          bottom: '24px',
-          right: '24px',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          padding: 0,
-          zIndex: 10,
-          boxShadow: '0 0 20px rgba(0, 136, 255, 0.4)',
-        }}
-        aria-label="Add new memory"
-      >
-        <Plus size={24} />
-      </button>
+      {/* 5. One coordinated Atlas dock keeps map utilities and creation actions
+          in a single collision-free zone. */}
+      <div className="atlas-dock" role="toolbar" aria-label="Atlas controls">
+        <button
+          type="button"
+          onClick={() => setViewMode((current) => current === 'globe' ? 'map' : 'globe')}
+          className="atlas-dock-action"
+          aria-label={viewMode === 'globe' ? 'Switch to 2D map' : 'Switch to 3D globe'}
+          title={viewMode === 'globe' ? 'Switch to 2D map' : 'Return to 3D globe'}
+        >
+          {viewMode === 'globe' ? <MapIcon size={18} /> : <Globe2 size={18} />}
+          <span>{viewMode === 'globe' ? '2D map' : '3D globe'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            const nextHeatmapState = !isHeatmapMode;
+            setIsHeatmapMode(nextHeatmapState);
+            if (nextHeatmapState) {
+              setShowOnlyMine(true);
+              setViewMode('globe');
+              setSelectedEntry(null);
+            }
+          }}
+          className={`atlas-dock-action atlas-heat-action ${isHeatmapMode ? 'is-active' : ''}`}
+          aria-pressed={isHeatmapMode}
+          aria-label="Toggle personal travel density"
+          title={isHeatmapMode ? 'Turn off personal travel density' : 'Show where your memories cluster'}
+        >
+          <Flame size={18} />
+          <span>Density</span>
+        </button>
+
+        <span className="atlas-dock-divider" aria-hidden="true" />
+
+        <button type="button" onClick={openNexus} className="atlas-dock-action atlas-nexus-action">
+          <Sparkles size={18} />
+          <span>Nexus</span>
+        </button>
+
+        <button type="button" onClick={openCreate} className="atlas-dock-action atlas-add-action">
+          <Plus size={19} />
+          <span>Add memory</span>
+        </button>
+      </div>
 
       {/* 6. Form panel modal for creating entry */}
       <CreateEntryPanel
@@ -402,7 +955,75 @@ function App() {
       />
 
       {/* 8. Social Panel */}
-      <SocialPanel isOpen={isSocialOpen} onClose={() => setIsSocialOpen(false)} />
+      <SocialPanel
+        isOpen={isSocialOpen}
+        onClose={() => setIsSocialOpen(false)}
+        demoMode={isDemoMode}
+        demoExplorers={DEMO_EXPLORERS}
+        onDemoInviteAccepted={(pinId) => {
+          const acceptedEntry = DEMO_SHARED_ENTRIES.find((entry) => entry.id === pinId);
+          if (!acceptedEntry) return;
+          setEntries((current) => current.some((entry) => entry.id === acceptedEntry.id)
+            ? current
+            : [...current, acceptedEntry]);
+        }}
+        onOpenExplorer={(explorer) => {
+          setIsSocialOpen(false);
+          setSelectedEntry(null);
+          setExplorerProfile(explorer);
+        }}
+      />
+
+      {/* 10. Data Import Modal */}
+      <ImportDataModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        demoMode={isDemoMode}
+        demoAuthorId={DEMO_PROFILE.uid}
+        onDemoImport={(importedEntries) => {
+          setEntries((current) => {
+            const importedIds = new Set(importedEntries.map((entry) => entry.id));
+            return [...importedEntries, ...current.filter((entry) => !importedIds.has(entry.id))];
+          });
+          setShowOnlyMine(true);
+          setSelectedEntry(null);
+        }}
+        onImportComplete={() => {
+          setShowOnlyMine(true);
+          setSelectedEntry(null);
+          refreshPins();
+        }}
+      />
+
+      {/* 11. AI Copilot */}
+      <AICopilotPanel
+        isOpen={isAICopilotOpen}
+        onClose={() => setIsAICopilotOpen(false)}
+        entries={entries}
+      />
+
+      {/* 12. Dodo Payments Subscription */}
+      <SubscriptionModal
+        isOpen={isSubscriptionOpen}
+        onClose={() => setIsSubscriptionOpen(false)}
+      />
+
+      <InspirationPanel
+        isOpen={isInspirationOpen}
+        onClose={() => setIsInspirationOpen(false)}
+        entries={entries}
+        onOpenMemory={(entry) => {
+          setIsInspirationOpen(false);
+          setShowOnlyMine(false);
+          handleSelectEntry(entry);
+        }}
+      />
+
+      <ExplorerAtlasPanel
+        explorer={explorerProfile}
+        onClose={() => setExplorerProfile(null)}
+        previewEntries={isDemoMode ? DEMO_FRIEND_ENTRIES : undefined}
+      />
         </>
       )}
 
@@ -410,13 +1031,18 @@ function App() {
       {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} />}
       
       {/* 9. Profile Panel */}
-      {user && profile && (
+      {hasAtlasAccess && visibleProfile && (
         <ProfilePanel 
           isOpen={isProfileOpen} 
           onClose={() => setIsProfileOpen(false)} 
-          profile={profile}
-          onUpdateAvatar={handleUpdateAvatar}
+          profile={visibleProfile}
+          entries={entries}
+          demoMode={isDemoMode}
         />
+      )}
+
+      {user && profile && profile.onboardingCompleted !== true && (
+        <ProfileSetupModal profile={profile} onComplete={() => undefined} />
       )}
 
     </div>

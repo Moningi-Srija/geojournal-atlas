@@ -1,32 +1,46 @@
-# React + TypeScript + Vite
+# GeoJournal — 3D Memory Atlas
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+GeoJournal turns scattered travel history into a living Atlas you can search, relive, plan from, and share with intention.
 
-Currently, two official plugins are available:
+## Live product
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **[Open GeoJournal](https://geojournal-atlas-srija-a6b0b.web.app/)**
+- **[Open the populated demo](https://geojournal-atlas-srija-a6b0b.web.app/?demo=1)** — no sign-in required
 
-## React Compiler
+## What works in the demo
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Interactive high-resolution 3D globe with a Leaflet 2D map fallback
+- Personal and Circle scopes with clearly authored friend pins
+- Google Timeline and geotagged Instagram export review with accept/reject controls
+- Meaning-aware Atlas search, Rediscover, and anniversary memories
+- Nexus travel copilot with Trip Fit context and a stage-safe local fallback
+- Friend profiles and globes, follow relationships, and shared-trip acceptance
+- Inspiration feed, country badges, Trophy Case, avatars, and themes
+- GeoJournal Pro pricing and Dodo-hosted Test Mode checkout
+- Clearly labelled Expeditions and Atlas Market product previews
 
-## Expanding the Oxlint configuration
+## Technology
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- React 19, TypeScript, and Vite
+- Three.js, `react-globe.gl`, Esri satellite imagery, Leaflet
+- Firebase Authentication, Firestore, and Firebase Hosting
+- Configurable OpenAI responses with local semantic/copilot fallbacks
+- Dodo Payments Test Mode; Maximem Synap instance active with the private server bridge planned next
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Run locally
+
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Create `.env.local` only for services you want to enable. The presentation demo remains usable without an OpenAI key.
+
+## Build and verify
+
+```bash
+npm run build
+npm run lint
+```
+
+Built by **Srija Moningi** for the Antler × Dodo Payments Crackathon.

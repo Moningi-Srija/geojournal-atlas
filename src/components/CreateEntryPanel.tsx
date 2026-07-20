@@ -10,7 +10,6 @@ import {
   UserPlus,
   Users,
   Lock,
-  Star,
   Globe2,
   Check,
   Clock,
@@ -32,6 +31,51 @@ interface CreateEntryPanelProps {
   editingEntry?: JournalEntry | null;
 }
 
+const MAX_PHOTOS = 3;
+const MAX_SOURCE_PHOTO_BYTES = 15 * 1024 * 1024;
+const MAX_INLINE_PHOTO_CHARS = 700_000;
+const MAX_INLINE_PHOTO_CHARS_EACH = 220_000;
+
+const compressPhotoForLegacyStorage = (file: File): Promise<string> => new Promise((resolve, reject) => {
+  if (!file.type.startsWith('image/')) {
+    reject(new Error(`${file.name} is not a supported image.`));
+    return;
+  }
+  if (file.size > MAX_SOURCE_PHOTO_BYTES) {
+    reject(new Error(`${file.name} is larger than 15 MB.`));
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+  reader.onload = () => {
+    const image = new Image();
+    image.onerror = () => reject(new Error(`Could not open ${file.name}.`));
+    image.onload = () => {
+      const maximumDimension = 500;
+      const scale = Math.min(1, maximumDimension / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        reject(new Error('This browser could not prepare the photo.'));
+        return;
+      }
+
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.68);
+      if (dataUrl.length > MAX_INLINE_PHOTO_CHARS_EACH) {
+        reject(new Error(`${file.name} is still too detailed after compression. Try a smaller photo.`));
+        return;
+      }
+      resolve(dataUrl);
+    };
+    image.src = reader.result as string;
+  };
+  reader.readAsDataURL(file);
+});
+
 export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
   isOpen,
   onClose,
@@ -48,7 +92,7 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
   const [lng, setLng] = useState<number | ''>('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [googlePhotosUrl, setGooglePhotosUrl] = useState('');
-  const [visibility, setVisibility] = useState<'public' | 'private' | 'close_friends'>('private');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('private');
   const [category, setCategory] = useState<EntryCategory>('general');
   const [country, setCountry] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
@@ -103,7 +147,7 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch (e) {}
+        } catch {}
       }
     };
   }, []);
@@ -126,7 +170,7 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
           setLng(editingEntry.lng);
           setPhotos([...(editingEntry.photos || [])]);
           setGooglePhotosUrl(editingEntry.googlePhotosUrl || '');
-          setVisibility(editingEntry.visibility || 'private');
+          setVisibility(editingEntry.visibility === 'public' ? 'public' : 'private');
           setCategory(editingEntry.category || 'general');
           setCountry(editingEntry.country || '');
           setCollaborators([...(editingEntry.collaborators || [])]);
@@ -155,64 +199,35 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
     }
   }, [isOpen, editingEntry]);
 
-  // Image compression and Canvas conversion
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Temporary V1 compatibility path. New media will move to Firebase Storage;
+  // until billing is enabled, keep inline Firestore images below the 1 MiB limit.
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setError('');
-    if (photos.length + files.length > 5) {
-      setError('You can upload a maximum of 5 photos per entry.');
+    if (photos.length + files.length > MAX_PHOTOS) {
+      setError(`You can add up to ${MAX_PHOTOS} photos to a memory in this release.`);
+      e.target.value = '';
       return;
     }
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 500;
-          const MAX_HEIGHT = 500;
-          let width = img.width;
-          let height = img.height;
-
-          // Resize proportional bounds
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            setPhotos((prev) => [...prev, event.target?.result as string]);
-            return;
-          }
-
-          ctx.drawImage(img, 0, 0, width, height);
-          // Compress quality to 0.70 to save footprint in localStorage
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.70);
-          setPhotos((prev) => [...prev, dataUrl]);
-        };
-        img.onerror = () => {
-          setError('Error loading image. Please try another file.');
-        };
-      };
-      reader.onerror = () => {
-        setError('Error reading file.');
-      };
-    });
+    try {
+      const compressedPhotos = await Promise.all(Array.from(files).map(compressPhotoForLegacyStorage));
+      const nextPhotos = [...photos, ...compressedPhotos];
+      const inlineCharacterCount = nextPhotos
+        .filter((photo) => photo.startsWith('data:'))
+        .reduce((total, photo) => total + photo.length, 0);
+      if (inlineCharacterCount > MAX_INLINE_PHOTO_CHARS) {
+        setError('These photos are too large together. Remove one or choose smaller files.');
+        return;
+      }
+      setPhotos(nextPhotos);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not prepare these photos.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleDeletePhoto = (indexToDelete: number) => {
@@ -382,6 +397,12 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
     if (lng === '' || isNaN(Number(lng)) || lng < -180 || lng > 180) {
       return setError('Please enter a valid longitude (-180 to 180).');
     }
+    const inlinePhotoCharacters = photos
+      .filter((photo) => photo.startsWith('data:'))
+      .reduce((total, photo) => total + photo.length, 0);
+    if (photos.length > MAX_PHOTOS || inlinePhotoCharacters > MAX_INLINE_PHOTO_CHARS) {
+      return setError(`Keep this memory to ${MAX_PHOTOS} compressed photos. Larger media support is coming after Storage setup.`);
+    }
 
     setIsSubmitting(true);
     setError('');
@@ -395,7 +416,7 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
           if (data && data.address && data.address.country) {
             detectedCountry = data.address.country;
           }
-        } catch (err) {
+        } catch {
           console.warn('Silent reverse geocode failed on submit');
         }
       }
@@ -487,10 +508,10 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
           </div>
         )}
 
-        {/* Photos (Optional, Max 5) */}
+        {/* Photos (temporary inline-storage guard; Firebase Storage migration is planned) */}
         <div className="flex flex-col gap-2">
           <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-            Journal Photos (Optional, Max 5)
+            Journal Photos (Optional, Max {MAX_PHOTOS})
           </label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
             {photos.map((url, idx) => (
@@ -532,7 +553,7 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
               </div>
             ))}
 
-            {photos.length < 5 && (
+            {photos.length < MAX_PHOTOS && (
               <label
                 style={{
                   width: '80px',
@@ -726,18 +747,6 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
               <Lock size={18} aria-hidden="true" />
               <span><strong>Private</strong><small>Only you and accepted co-travelers</small></span>
             </label>
-            <label className={`collab-visibility-card collab-close-friends ${visibility === 'close_friends' ? 'collab-selected' : ''}`}>
-              <input
-                className="collab-visibility-radio"
-                type="radio"
-                name="memory-visibility"
-                value="close_friends"
-                checked={visibility === 'close_friends'}
-                onChange={() => setVisibility('close_friends')}
-              />
-              <Star size={18} aria-hidden="true" />
-              <span><strong>Close friends</strong><small>Your trusted travel circle</small></span>
-            </label>
             <label className={`collab-visibility-card collab-public ${visibility === 'public' ? 'collab-selected' : ''}`}>
               <input
                 className="collab-visibility-radio"
@@ -869,7 +878,6 @@ export const CreateEntryPanel: React.FC<CreateEntryPanelProps> = ({
               style={{ padding: '10px 12px', appearance: 'none', backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right .7rem top 50%', backgroundSize: '.65rem auto' }}
             >
               <option value="private" style={{ color: '#000' }}>🔒 Private</option>
-              <option value="close_friends" style={{ color: '#000' }}>🌟 Close Friends</option>
               <option value="public" style={{ color: '#000' }}>🌍 Public</option>
             </select>
           </div>

@@ -1,5 +1,7 @@
 # GeoJournal Crackathon handoff
 
+> **Archive notice:** this document describes the preserved `v0.1-ai-showcase` Crackathon build. It is not the current Mobile V1 product contract.
+
 ## The one-line story
 
 GeoJournal turns scattered travel photos, notes, map history, and plans into one living 3D Memory Atlas that users can import into, search, rediscover, plan from, and share with intention.

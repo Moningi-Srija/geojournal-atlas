@@ -44,10 +44,10 @@ const TOUR_STEPS: TourStep[] = [
     body: 'Circle brings trusted friends onto your world. Mine instantly returns to only your personal memories.',
   },
   {
-    target: 'semantic-search',
-    eyebrow: 'Meaning, not filenames',
-    title: 'Search memories naturally',
-    body: 'Try an idea such as “quiet beaches” or “great coffee” and Atlas finds relevant moments by meaning.',
+    target: 'memory-search',
+    eyebrow: 'Places, stories, activities',
+    title: 'Find any memory quickly',
+    body: 'Try a phrase such as “quiet beaches” or “great coffee” and Atlas focuses matching journal moments locally.',
   },
   {
     target: 'memories-rediscover',
@@ -62,10 +62,10 @@ const TOUR_STEPS: TourStep[] = [
     body: 'Sync reviews Google Location and geotagged Instagram exports before any suggested pin joins your Atlas.',
   },
   {
-    target: 'nexus-add',
-    eyebrow: 'From memory to next move',
-    title: 'Ask Nexus—or capture the moment',
-    body: 'Nexus turns your Atlas into personal trip ideas, while Add memory saves a new place in a few taps.',
+    target: 'add-memory',
+    eyebrow: 'Capture the moment',
+    title: 'Add a place in a few taps',
+    body: 'Save the location, story, visibility, photos, and co-travelers behind a memory while it is still fresh.',
   },
 ];
 

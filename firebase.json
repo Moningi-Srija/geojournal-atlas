@@ -1,4 +1,7 @@
 {
+  "firestore": {
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
     "site": "geojournal-atlas-srija-a6b0b",
     "public": "dist",

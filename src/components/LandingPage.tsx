@@ -42,7 +42,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onPrevie
 
             <p className="landing-copy">
               Turn meaningful places, photographs, and journal notes into a personal globe you can
-              revisit for years—and let Nexus connect the memories behind every journey.
+              revisit for years, rediscover by season, and share only when you choose.
             </p>
 
             <div className="landing-hero-actions">
@@ -60,7 +60,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onPrevie
             </div>
 
             <div className="landing-capabilities" aria-label="GeoJournal highlights">
-              {['Memory pins', 'Semantic search', 'Nexus AI', 'Country badges'].map((capability) => (
+              {['Memory pins', 'Private journals', 'Local search', 'Country badges'].map((capability) => (
                 <span key={capability}>
                   <i aria-hidden="true" /> {capability}
                 </span>
@@ -110,7 +110,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onPrevie
                 <p>Crimson maples, quiet lanes, and a morning I still think about.</p>
                 <div className="landing-memory-signal">
                   <Sparkles size={13} aria-hidden="true" />
-                  Nexus remembers why this place mattered
+                  Ready to rediscover when the season returns
                 </div>
               </div>
             </article>

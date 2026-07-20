@@ -1,23 +1,24 @@
 # GeoJournal — 3D Memory Atlas
 
-GeoJournal turns scattered travel history into a living Atlas you can search, relive, plan from, and share with intention.
+GeoJournal turns scattered travel history into a living Atlas you can search, relive, and share with intention.
 
 ## Live product
 
 - **[Open GeoJournal](https://geojournal-atlas-srija-a6b0b.web.app/)**
 - **[Open the populated demo](https://geojournal-atlas-srija-a6b0b.web.app/?demo=1)** — no sign-in required
 
-## What works in the demo
+## Mobile V1 product
 
 - Interactive high-resolution 3D globe with a Leaflet 2D map fallback
 - Personal and Circle scopes with clearly authored friend pins
 - Google Timeline and geotagged Instagram export review with accept/reject controls
-- Meaning-aware Atlas search, Rediscover, and anniversary memories
-- Nexus travel copilot with Trip Fit context and a stage-safe local fallback
+- On-device Atlas keyword search, Rediscover, and anniversary memories
 - Friend profiles and globes, follow relationships, and shared-trip acceptance
 - Inspiration feed, country badges, Trophy Case, avatars, and themes
-- GeoJournal Pro pricing and Dodo-hosted Test Mode checkout
-- Clearly labelled Expeditions and Atlas Market product previews
+- A truthful Expeditions Coming Soon screen, with no fake inventory or checkout
+- No paid AI calls, API keys, credits, or external digital-subscription checkout in the V1 runtime
+
+The temporary Firestore-compatible uploader is capped at three compressed photos per memory. A production migration to Firebase Storage is required before public media scale or video; see [Mobile V1 media and capacity](docs/MOBILE_V1_MEDIA_CAPACITY.md).
 
 ## Preserved AI-showcase checkpoint
 
@@ -44,8 +45,8 @@ The Maximem private server bridge remains a separately labelled roadmap item; th
 - React 19, TypeScript, and Vite
 - Three.js, `react-globe.gl`, Esri satellite imagery, Leaflet
 - Firebase Authentication, Firestore, and Firebase Hosting
-- Configurable OpenAI responses with local semantic/copilot fallbacks
-- Dodo Payments Test Mode; Maximem Synap instance active with the private server bridge planned next
+- Local in-browser memory search with no paid model dependency
+- Historical Dodo and Maximem showcase work preserved only in the tagged Crackathon checkpoint
 
 ## Run locally
 
@@ -54,7 +55,7 @@ npm install
 npm run dev
 ```
 
-Create `.env.local` only for services you want to enable. The presentation demo remains usable without an OpenAI key.
+No OpenAI key is used or required by Mobile V1.
 
 ## Build and verify
 

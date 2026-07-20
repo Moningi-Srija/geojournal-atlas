@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Compass, User as UserIcon, LogOut, Users, List, MapPin, Sparkles, Globe2, Map as MapIcon, Lightbulb, BookOpen } from 'lucide-react';
+import { Plus, Compass, User as UserIcon, LogOut, Users, List, MapPin, Globe2, Map as MapIcon, Lightbulb, BookOpen } from 'lucide-react';
 import type { JournalEntry, UserProfile } from './types';
 import { GlobeView } from './components/GlobeView';
 import { LeafletMap } from './components/LeafletMap';
@@ -12,9 +12,7 @@ import { SocialPanel } from './components/SocialPanel';
 import { LandingPage } from './components/LandingPage';
 import { ProfilePanel } from './components/ProfilePanel';
 import { ImportDataModal } from './components/ImportDataModal';
-import { AICopilotPanel } from './components/AICopilotPanel';
-import { SubscriptionModal } from './components/SubscriptionModal';
-import { AISearchBar } from './components/AISearchBar';
+import { MemorySearchBar } from './components/MemorySearchBar';
 import { ProfileSetupModal } from './components/ProfileSetupModal';
 import { InspirationPanel } from './components/InspirationPanel';
 import { ExplorerAtlasPanel } from './components/ExplorerAtlasPanel';
@@ -617,11 +615,9 @@ function App() {
   const [isSocialOpen, setIsSocialOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isAICopilotOpen, setIsAICopilotOpen] = useState(false);
-  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isInspirationOpen, setIsInspirationOpen] = useState(false);
   const [explorerProfile, setExplorerProfile] = useState<UserProfile | null>(null);
-  const [aiSearchFilter, setAiSearchFilter] = useState<string[] | null>(null);
+  const [searchFilter, setSearchFilter] = useState<string[] | null>(null);
   const [showOnlyMine, setShowOnlyMine] = useState(false);
   const [pinsRefreshKey, setPinsRefreshKey] = useState(0);
   const [viewMode, setViewMode] = useState<'globe' | 'map'>(() => {
@@ -827,23 +823,13 @@ function App() {
   };
 
   const handleSelectEntry = (entry: JournalEntry | null) => {
-    setIsAICopilotOpen(false);
     setIsSocialOpen(false);
     setSelectedEntry(entry);
-  };
-
-  const openNexus = () => {
-    setIsSidebarOpen(false);
-    setSelectedEntry(null);
-    setIsSocialOpen(false);
-    setIsProfileOpen(false);
-    setIsAICopilotOpen(true);
   };
 
   const openSocial = () => {
     setIsSidebarOpen(false);
     setSelectedEntry(null);
-    setIsAICopilotOpen(false);
     setIsProfileOpen(false);
     setIsSocialOpen(true);
   };
@@ -851,7 +837,6 @@ function App() {
   const openInspiration = () => {
     setIsSidebarOpen(false);
     setSelectedEntry(null);
-    setIsAICopilotOpen(false);
     setIsSocialOpen(false);
     setIsProfileOpen(false);
     setIsInspirationOpen(true);
@@ -860,7 +845,6 @@ function App() {
   const openProfile = () => {
     setIsSidebarOpen(false);
     setSelectedEntry(null);
-    setIsAICopilotOpen(false);
     setIsSocialOpen(false);
     setIsProfileOpen(true);
   };
@@ -872,7 +856,6 @@ function App() {
     }
     setIsSidebarOpen(false);
     setSelectedEntry(null);
-    setIsAICopilotOpen(false);
     setIsSocialOpen(false);
     setEditingEntry(null);
     setIsCreateOpen(true);
@@ -882,7 +865,6 @@ function App() {
     setSelectedEntry(null);
     setIsSocialOpen(false);
     setIsProfileOpen(false);
-    setIsAICopilotOpen(false);
     setIsInspirationOpen(false);
     setExplorerProfile(null);
 
@@ -936,8 +918,8 @@ function App() {
             {isDemoMode && <span className="demo-mode-chip">Demo</span>}
           </div>
 
-          <div className="app-search-zone" data-tour="semantic-search">
-            <AISearchBar entries={atlasEntries} onSearchComplete={setAiSearchFilter} />
+          <div className="app-search-zone" data-tour="memory-search">
+            <MemorySearchBar entries={atlasEntries} onSearchComplete={setSearchFilter} />
           </div>
 
           <div className="app-topbar-actions">
@@ -947,7 +929,7 @@ function App() {
                 onClick={() => {
                   setShowOnlyMine(false);
                   setSelectedEntry(null);
-                  setAiSearchFilter(null);
+                  setSearchFilter(null);
                 }}
                 className={!showOnlyMine ? 'is-active' : ''}
                 aria-pressed={!showOnlyMine}
@@ -962,7 +944,7 @@ function App() {
                 onClick={() => {
                   setShowOnlyMine(true);
                   setSelectedEntry(null);
-                  setAiSearchFilter(null);
+                  setSearchFilter(null);
                 }}
                 className={showOnlyMine ? 'is-active' : ''}
                 aria-pressed={showOnlyMine}
@@ -1032,7 +1014,7 @@ function App() {
               entries={atlasEntries}
               selectedEntry={selectedEntry}
               onSelectEntry={handleSelectEntry}
-              filteredIds={aiSearchFilter}
+              filteredIds={searchFilter}
               currentUserId={visibleProfile?.uid}
               authorProfiles={isDemoMode ? DEMO_PROFILES_BY_ID : undefined}
             />
@@ -1043,7 +1025,7 @@ function App() {
             selectedEntry={selectedEntry}
             onSelectEntry={handleSelectEntry}
             currentUserId={visibleProfile?.uid}
-            filteredIds={aiSearchFilter}
+            filteredIds={searchFilter}
             authorProfiles={isDemoMode ? DEMO_PROFILES_BY_ID : undefined}
           />
         )}
@@ -1082,7 +1064,6 @@ function App() {
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenImport={() => setIsImportModalOpen(true)}
-        onOpenPro={() => setIsSubscriptionOpen(true)}
         profile={visibleProfile}
         onOpenProfile={openProfile}
       />
@@ -1112,7 +1093,7 @@ function App() {
 
       {/* 5. One coordinated Atlas dock keeps map utilities and creation actions
           in a single collision-free zone. */}
-      <div className="atlas-dock" role="toolbar" aria-label="Atlas controls" data-tour="nexus-add">
+      <div className="atlas-dock" role="toolbar" aria-label="Atlas controls" data-tour="add-memory">
         <button
           type="button"
           onClick={() => setViewMode((current) => current === 'globe' ? 'map' : 'globe')}
@@ -1125,11 +1106,6 @@ function App() {
         </button>
 
         <span className="atlas-dock-divider" aria-hidden="true" />
-
-        <button type="button" onClick={openNexus} className="atlas-dock-action atlas-nexus-action">
-          <Sparkles size={18} />
-          <span>Nexus</span>
-        </button>
 
         <button type="button" onClick={openCreate} className="atlas-dock-action atlas-add-action">
           <Plus size={19} />
@@ -1184,19 +1160,6 @@ function App() {
           setSelectedEntry(null);
           refreshPins();
         }}
-      />
-
-      {/* 11. AI Copilot */}
-      <AICopilotPanel
-        isOpen={isAICopilotOpen}
-        onClose={() => setIsAICopilotOpen(false)}
-        entries={entries}
-      />
-
-      {/* 12. Dodo Payments Subscription */}
-      <SubscriptionModal
-        isOpen={isSubscriptionOpen}
-        onClose={() => setIsSubscriptionOpen(false)}
       />
 
       <InspirationPanel

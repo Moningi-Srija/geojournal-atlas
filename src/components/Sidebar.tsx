@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, SearchX, MapPin, MapPinned, ChevronLeft, ChevronRight, BookOpen, BarChart3, Upload, Star, Sparkles } from 'lucide-react';
+import { Search, SearchX, MapPin, MapPinned, ChevronLeft, ChevronRight, BookOpen, BarChart3, Upload, Sparkles } from 'lucide-react';
 import type { JournalEntry, UserProfile } from '../types';
 import { getBadgeDefinition } from '../utils/badges';
 
@@ -10,7 +10,6 @@ interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   onOpenImport?: () => void;
-  onOpenPro?: () => void;
   profile?: UserProfile | null;
   onOpenProfile?: () => void;
 }
@@ -76,7 +75,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   onToggle,
   onOpenImport,
-  onOpenPro,
   profile,
   onOpenProfile,
 }) => {
@@ -243,15 +241,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   data-tour="sync-import"
                 >
                   <Upload size={14} /> Sync
-                </button>
-              )}
-              {onOpenPro && (
-                <button
-                  onClick={onOpenPro}
-                  className="glass-btn hover-glow sidebar-action is-pro"
-                  title="Preview GeoJournal Pro"
-                >
-                  <Star size={14} fill="#fbbf24" /> Pro
                 </button>
               )}
             </div>

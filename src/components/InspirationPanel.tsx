@@ -1,14 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight,
-  CalendarDays,
-  CircleDollarSign,
   Compass,
   MapPin,
-  Megaphone,
   Route,
-  ShieldCheck,
-  ShoppingBag,
   Sparkles,
   Telescope,
   Users,
@@ -24,40 +19,16 @@ interface InspirationPanelProps {
 }
 
 type Mood = 'all' | 'nature' | 'food' | 'city' | 'slow';
-type DiscoveryTab = 'inspiration' | 'expeditions' | 'market';
+type DiscoveryTab = 'inspiration' | 'expeditions';
 
 interface MoodOption {
   id: Mood;
   label: string;
 }
 
-interface NexusSignal {
+interface AtlasMatch {
   label: string;
   explanation: string;
-}
-
-interface ExpeditionPreview {
-  id: string;
-  title: string;
-  summary: string;
-  host: string;
-  route: string;
-  dates: string;
-  seats: string;
-  budget: string;
-  trustMarkers: string[];
-  promoted?: boolean;
-}
-
-interface MarketPreview {
-  id: string;
-  title: string;
-  description: string;
-  creator: string;
-  type: string;
-  price: string;
-  status: 'Dodo Test Mode' | 'Dodo checkout planned' | 'Preview';
-  checkoutUrl?: string;
 }
 
 const MOOD_OPTIONS: MoodOption[] = [
@@ -71,64 +42,6 @@ const MOOD_OPTIONS: MoodOption[] = [
 const DISCOVERY_TABS: { id: DiscoveryTab; label: string }[] = [
   { id: 'inspiration', label: 'Inspiration' },
   { id: 'expeditions', label: 'Expeditions' },
-  { id: 'market', label: 'Atlas Market' },
-];
-
-const EXPEDITION_PREVIEWS: ExpeditionPreview[] = [
-  {
-    id: 'western-ghats-preview',
-    title: 'Monsoon Trails of the Western Ghats',
-    summary: 'A small-group trekking concept shaped around misty ridgelines, homestays, and a deliberately gentle pace.',
-    host: 'Aarav M. · preview host',
-    route: 'Bengaluru → Chikmagalur → Kudremukh',
-    dates: 'Aug 22–25, 2026 · preview dates',
-    seats: '6 planned seats',
-    budget: '₹18k–₹24k estimated',
-    trustMarkers: ['Host identity check planned', 'Route safety review planned'],
-    promoted: true,
-  },
-  {
-    id: 'kerala-food-preview',
-    title: 'Coastal Food Stories: Kochi to Alleppey',
-    summary: 'A creator-led route concept connecting markets, family kitchens, ferry rides, and one slow night on the backwaters.',
-    host: 'Maya J. · preview host',
-    route: 'Fort Kochi → Kumbalangi → Alleppey',
-    dates: 'Nov 7–10, 2026 · preview dates',
-    seats: '8 planned seats',
-    budget: '₹14k–₹20k estimated',
-    trustMarkers: ['Local-host review planned', 'Clear cancellation terms planned'],
-  },
-];
-
-const MARKET_PREVIEWS: MarketPreview[] = [
-  {
-    id: 'quiet-kyoto-itinerary',
-    title: '48 Hours in Kyoto’s Quiet Lanes',
-    description: 'A downloadable, unhurried itinerary focused on neighborhood walks, early temples, and independent cafés.',
-    creator: 'Mika T. · preview creator',
-    type: 'Digital itinerary',
-    price: '$12 preview price',
-    status: 'Dodo Test Mode',
-    checkoutUrl: 'https://test.checkout.dodopayments.com/buy/pdt_0NjRHDYgh1JvodFVdL2u5?quantity=1',
-  },
-  {
-    id: 'bangalore-trek-pack',
-    title: 'Bangalore Weekend Trek Route Pack',
-    description: 'A creator-curated set of route notes, packing prompts, and map references for three nearby day treks.',
-    creator: 'Trail Notes · preview creator',
-    type: 'Route pack',
-    price: '₹499 preview price',
-    status: 'Preview',
-  },
-  {
-    id: 'old-kochi-food-walk',
-    title: 'Old Kochi Food Walk with a Local',
-    description: 'A proposed locally hosted experience built around spice stories, small eateries, and market conversations.',
-    creator: 'Maya J. · preview creator',
-    type: 'Locally hosted package',
-    price: '₹2,800/person preview price',
-    status: 'Dodo checkout planned',
-  },
 ];
 
 const entryText = (entry: JournalEntry) =>
@@ -154,7 +67,7 @@ const matchesMood = (entry: JournalEntry, mood: Mood) => {
   return /slow|quiet|unhurried|wander|stroll|local|hidden|morning|lane|village|cafe|café|market/.test(text);
 };
 
-const deriveNexusSignal = (entry: JournalEntry): NexusSignal => {
+const deriveAtlasMatch = (entry: JournalEntry): AtlasMatch => {
   const text = entryText(entry);
 
   if (/quiet|slow|unhurried|wander|stroll|lane|village/.test(text)) {
@@ -205,7 +118,6 @@ export const InspirationPanel: React.FC<InspirationPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<DiscoveryTab>('inspiration');
   const [activeMood, setActiveMood] = useState<Mood>('all');
-  const [previewNotice, setPreviewNotice] = useState('');
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -230,7 +142,7 @@ export const InspirationPanel: React.FC<InspirationPanelProps> = ({
   if (!isOpen) return null;
 
   const featuredEntry = filteredEntries[0] ?? null;
-  const nexusSignal = featuredEntry ? deriveNexusSignal(featuredEntry) : null;
+  const atlasMatch = featuredEntry ? deriveAtlasMatch(featuredEntry) : null;
 
   const openMemory = (entry: JournalEntry) => {
     onOpenMemory(entry);
@@ -239,7 +151,6 @@ export const InspirationPanel: React.FC<InspirationPanelProps> = ({
 
   const selectTab = (tab: DiscoveryTab) => {
     setActiveTab(tab);
-    setPreviewNotice('');
   };
 
   return (
@@ -323,22 +234,22 @@ export const InspirationPanel: React.FC<InspirationPanelProps> = ({
             })}
           </nav>
 
-          {featuredEntry && nexusSignal ? (
+          {featuredEntry && atlasMatch ? (
             <>
-              <aside className="inspiration-nexus" aria-labelledby="inspiration-nexus-title">
-                <div className="inspiration-nexus-icon">
+              <aside className="inspiration-atlas-fit" aria-labelledby="inspiration-atlas-fit-title">
+                <div className="inspiration-atlas-fit-icon">
                   <Sparkles size={18} aria-hidden="true" />
                 </div>
-                <div className="inspiration-nexus-copy">
-                  <span className="inspiration-nexus-kicker">Nexus · Why it fits your Atlas</span>
-                  <h2 id="inspiration-nexus-title">{nexusSignal.label}</h2>
+                <div className="inspiration-atlas-fit-copy">
+                  <span className="inspiration-atlas-fit-kicker">Why it may fit your Atlas</span>
+                  <h2 id="inspiration-atlas-fit-title">{atlasMatch.label}</h2>
                   <p>
-                    <strong>{featuredEntry.title}</strong> stands out because {nexusSignal.explanation.toLowerCase()}
+                    <strong>{featuredEntry.title}</strong> stands out because {atlasMatch.explanation.toLowerCase()}
                     {' '}If that is a feeling you save, this shared memory is worth opening.
                   </p>
                 </div>
                 <button
-                  className="inspiration-nexus-action"
+                  className="inspiration-atlas-fit-action"
                   type="button"
                   onClick={() => openMemory(featuredEntry)}
                 >
@@ -427,210 +338,47 @@ export const InspirationPanel: React.FC<InspirationPanelProps> = ({
               <div className="inspiration-discovery-intro">
                 <div className="inspiration-discovery-copy">
                   <span className="inspiration-eyebrow">
-                    <Users size={14} aria-hidden="true" />
-                    Creator expeditions · presentation preview
+                    <Route size={14} aria-hidden="true" />
+                    Expeditions · coming soon
                   </span>
-                  <h1 id="inspiration-discovery-title">Go farther with someone who knows the story.</h1>
+                  <h1 id="inspiration-discovery-title">Shared journeys deserve a thoughtful launch.</h1>
                   <p>
-                    Expeditions are a proposed small-group format where trusted creators can turn
-                    their routes and local knowledge into hosted journeys. Dates, seats, and budgets
-                    below are illustrative—not live inventory.
+                    GeoJournal is preparing a trusted way to discover and join small-group journeys.
+                    There are no expedition listings, reservations, or payments in this version.
                   </p>
                 </div>
-                <button
-                  className="inspiration-listing-action"
-                  type="button"
-                  onClick={() => setPreviewNotice('Creator expedition listings are a presentation preview. No trip was submitted or published.')}
-                >
-                  List an expedition <span className="inspiration-preview-badge">Preview</span>
-                </button>
               </div>
 
               <aside className="inspiration-promotion-note">
-                <Megaphone size={18} aria-hidden="true" />
+                <Compass size={18} aria-hidden="true" />
                 <p>
-                  <strong>Native, clearly labeled promotion.</strong> Sponsored creator routes or
-                  pins may appear inside Discovery and the Atlas, always marked <em>Promoted</em> so
-                  travelers can distinguish paid placement from organic memories.
+                  <strong>For now, Discovery stays focused on real public memories.</strong> Expeditions
+                  will open only after host verification, safety expectations, transparent itineraries,
+                  and reliable booking support are ready.
                 </p>
               </aside>
 
-              {previewNotice && (
-                <div className="inspiration-preview-notice" role="status">
-                  <Sparkles size={15} aria-hidden="true" /> {previewNotice}
+              <div className="inspiration-empty" role="status">
+                <div className="inspiration-empty-icon">
+                  <Users size={27} aria-hidden="true" />
                 </div>
-              )}
-
-              <div className="inspiration-section-heading">
-                <div>
-                  <span className="inspiration-section-kicker">Expedition concepts</span>
-                  <h2>Small groups, specific points of view</h2>
-                </div>
-                <span className="inspiration-result-count">2 previews</span>
-              </div>
-
-              <div className="inspiration-expedition-grid">
-                {EXPEDITION_PREVIEWS.map((expedition) => (
-                  <article
-                    className={`inspiration-expedition-card ${
-                      expedition.promoted ? 'inspiration-expedition-promoted' : ''
-                    }`}
-                    key={expedition.id}
-                  >
-                    <header className="inspiration-expedition-header">
-                      <span className="inspiration-expedition-type">
-                        <Route size={14} aria-hidden="true" /> Group-trip preview
-                      </span>
-                      {expedition.promoted && (
-                        <span className="inspiration-promoted-badge">
-                          <Megaphone size={12} aria-hidden="true" /> Promoted
-                        </span>
-                      )}
-                    </header>
-
-                    <div className="inspiration-expedition-copy">
-                      <h2>{expedition.title}</h2>
-                      <p>{expedition.summary}</p>
-                    </div>
-
-                    <div className="inspiration-expedition-host">
-                      <Users size={16} aria-hidden="true" />
-                      <span>Hosted by {expedition.host}</span>
-                    </div>
-
-                    <dl className="inspiration-expedition-details">
-                      <div className="inspiration-expedition-detail">
-                        <dt><MapPin size={14} aria-hidden="true" /> Route</dt>
-                        <dd>{expedition.route}</dd>
-                      </div>
-                      <div className="inspiration-expedition-detail">
-                        <dt><CalendarDays size={14} aria-hidden="true" /> Dates</dt>
-                        <dd>{expedition.dates}</dd>
-                      </div>
-                      <div className="inspiration-expedition-detail">
-                        <dt><Users size={14} aria-hidden="true" /> Group</dt>
-                        <dd>{expedition.seats}</dd>
-                      </div>
-                      <div className="inspiration-expedition-detail">
-                        <dt><CircleDollarSign size={14} aria-hidden="true" /> Budget band</dt>
-                        <dd>{expedition.budget}</dd>
-                      </div>
-                    </dl>
-
-                    <ul className="inspiration-trust-list" aria-label="Planned trust features">
-                      {expedition.trustMarkers.map((marker) => (
-                        <li key={marker}>
-                          <ShieldCheck size={14} aria-hidden="true" /> {marker}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <footer className="inspiration-expedition-footer">
-                      <span>Concept only · no reservation created</span>
-                      <button
-                        type="button"
-                        onClick={() => setPreviewNotice(`${expedition.title} is a presentation concept. Dates, seats, and pricing are not bookable.`)}
-                      >
-                        View preview <ArrowUpRight size={14} aria-hidden="true" />
-                      </button>
-                    </footer>
-                  </article>
-                ))}
+                <span className="inspiration-empty-kicker">On the roadmap</span>
+                <h2>Expeditions are not open yet.</h2>
+                <p>
+                  We are designing verified hosts, clear group sizes, complete route details, and
+                  traveler protections before anyone can list or book a journey.
+                </p>
+                <button
+                  className="inspiration-empty-action"
+                  type="button"
+                  onClick={() => selectTab('inspiration')}
+                >
+                  Explore community stories
+                </button>
               </div>
             </section>
           )}
 
-          {activeTab === 'market' && (
-            <section className="inspiration-discovery-view">
-              <div className="inspiration-discovery-intro">
-                <div className="inspiration-discovery-copy">
-                  <span className="inspiration-eyebrow">
-                    <ShoppingBag size={14} aria-hidden="true" />
-                    Creator marketplace · presentation preview
-                  </span>
-                  <h1 id="inspiration-discovery-title">Take a creator’s Atlas with you.</h1>
-                  <p>
-                    Atlas Market is a proposed storefront for digital guides, route packs, and
-                    locally hosted experiences. The Kyoto guide below opens a Dodo-hosted Test Mode
-                    checkout; every other listing, fulfilment flow, and creator payout remains a preview.
-                  </p>
-                </div>
-                <button
-                  className="inspiration-listing-action"
-                  type="button"
-                  onClick={() => setPreviewNotice('Creator storefront tools are a presentation preview. No product was listed or charged.')}
-                >
-                  Sell with Atlas <span className="inspiration-preview-badge">Preview</span>
-                </button>
-              </div>
-
-              <aside className="inspiration-promotion-note">
-                <Megaphone size={18} aria-hidden="true" />
-                <p>
-                  <strong>Promotions stay native and transparent.</strong> A sponsored product may
-                  extend into a related route or Atlas pin, but every paid placement is visibly
-                  labeled <em>Promoted</em> rather than presented as an organic recommendation.
-                </p>
-              </aside>
-
-              {previewNotice && (
-                <div className="inspiration-preview-notice" role="status">
-                  <Sparkles size={15} aria-hidden="true" /> {previewNotice}
-                </div>
-              )}
-
-              <div className="inspiration-section-heading">
-                <div>
-                  <span className="inspiration-section-kicker">Atlas Market concepts</span>
-                  <h2>Useful travel knowledge, packaged with care</h2>
-                </div>
-                <span className="inspiration-result-count">3 previews</span>
-              </div>
-
-              <div className="inspiration-market-grid">
-                {MARKET_PREVIEWS.map((product) => (
-                  <article className="inspiration-market-card" key={product.id}>
-                    <div className="inspiration-market-art" aria-hidden="true">
-                      <ShoppingBag size={25} />
-                      <span>{product.type}</span>
-                    </div>
-                    <div className="inspiration-market-body">
-                      <span className="inspiration-market-type">{product.type}</span>
-                      <h2>{product.title}</h2>
-                      <p>{product.description}</p>
-                      <div className="inspiration-market-creator">
-                        <ShoppingBag size={14} aria-hidden="true" /> {product.creator}
-                      </div>
-                      <div className="inspiration-market-price-row">
-                        <strong>{product.price}</strong>
-                        <span className="inspiration-market-status">{product.status}</span>
-                      </div>
-                    </div>
-                    <footer className="inspiration-market-footer">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (product.checkoutUrl) {
-                            window.open(product.checkoutUrl, '_blank', 'noopener,noreferrer');
-                            setPreviewNotice(`${product.title} opened in Dodo Test Mode. No real charge is possible, and fulfilment is not yet connected.`);
-                            return;
-                          }
-                          setPreviewNotice(`${product.title} is a marketplace preview. No payment was initiated or collected.`);
-                        }}
-                      >
-                        {product.checkoutUrl ? 'Try test checkout' : 'Preview product'} <ArrowUpRight size={14} aria-hidden="true" />
-                      </button>
-                    </footer>
-                  </article>
-                ))}
-              </div>
-
-              <div className="inspiration-checkout-note">
-                <CircleDollarSign size={17} aria-hidden="true" />
-                <span>Kyoto uses a Dodo-hosted Test Mode checkout—no real charge. Entitlements and creator payouts are not yet connected.</span>
-              </div>
-            </section>
-          )}
         </div>
       </section>
     </div>

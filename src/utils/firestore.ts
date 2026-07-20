@@ -8,6 +8,7 @@ import {
   query,
   where,
   limit,
+  orderBy,
   getDoc,
   serverTimestamp,
   updateDoc,
@@ -69,6 +70,7 @@ export interface ImportProgress {
 }
 
 const IMPORT_BATCH_SIZE = 200;
+const ATLAS_QUERY_LIMIT = 100;
 
 export const importPinsInBatches = async (
   entries: JournalEntry[],
@@ -165,13 +167,13 @@ export const fetchPins = async (currentUid: string | undefined, showOnlyMine: bo
   const pinsRef = collection(db, 'pins');
   const queries = showOnlyMine && currentUid
     ? [
-        query(pinsRef, where('authorId', '==', currentUid)),
-        query(pinsRef, where('acceptedCollaboratorIds', 'array-contains', currentUid)),
+        query(pinsRef, where('authorId', '==', currentUid), orderBy('date', 'desc'), limit(ATLAS_QUERY_LIMIT)),
+        query(pinsRef, where('acceptedCollaboratorIds', 'array-contains', currentUid), orderBy('date', 'desc'), limit(ATLAS_QUERY_LIMIT)),
       ]
     : [
-        query(pinsRef, where('visibility', 'in', ['public', 'close_friends'])),
+        query(pinsRef, where('visibility', '==', 'public'), orderBy('date', 'desc'), limit(ATLAS_QUERY_LIMIT)),
         ...(currentUid
-          ? [query(pinsRef, where('acceptedCollaboratorIds', 'array-contains', currentUid))]
+          ? [query(pinsRef, where('acceptedCollaboratorIds', 'array-contains', currentUid), orderBy('date', 'desc'), limit(ATLAS_QUERY_LIMIT))]
           : []),
       ];
 
@@ -189,19 +191,35 @@ export const fetchPins = async (currentUid: string | undefined, showOnlyMine: bo
 
 export const fetchExplorerPins = async (explorerUid: string) => {
   const pinsRef = collection(db, 'pins');
-  // Explorer profiles are public views. Querying public pins first avoids ever
-  // reading an explorer's private memories merely to filter them in the client.
-  const publicSnapshot = await getDocs(query(pinsRef, where('visibility', '==', 'public')));
-  return publicSnapshot.docs
-    .map((pinDoc) => {
+  // Filter by explorer on the server. The old implementation downloaded every
+  // public pin in the project before filtering in the browser.
+  const snapshots = await Promise.all([
+    getDocs(query(
+      pinsRef,
+      where('authorId', '==', explorerUid),
+      where('visibility', '==', 'public'),
+      orderBy('date', 'desc'),
+      limit(ATLAS_QUERY_LIMIT),
+    )),
+    getDocs(query(
+      pinsRef,
+      where('acceptedCollaboratorIds', 'array-contains', explorerUid),
+      where('visibility', '==', 'public'),
+      orderBy('date', 'desc'),
+      limit(ATLAS_QUERY_LIMIT),
+    )),
+  ]);
+  const pinsById = new Map<string, JournalEntry>();
+  snapshots.forEach((snapshot) => {
+    snapshot.docs.forEach((pinDoc) => {
       const pin = pinDoc.data() as JournalEntry;
-      return { ...pin, id: pin.id || pinDoc.id };
-    })
-    .filter((pin) => (
-      pin.authorId === explorerUid || pin.acceptedCollaboratorIds?.includes(explorerUid)
-    ))
+      pinsById.set(pin.id || pinDoc.id, { ...pin, id: pin.id || pinDoc.id });
+    });
+  });
+
+  return [...pinsById.values()]
     .sort((a, b) => b.date - a.date)
-    .slice(0, 100);
+    .slice(0, ATLAS_QUERY_LIMIT);
 };
 
 // ==========================================

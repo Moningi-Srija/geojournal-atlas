@@ -149,7 +149,7 @@ export const AtlasPersonaModal = ({
             </div>
           </div>
           <div className="persona-header-actions">
-            <span className="persona-preview-badge">Presentation preview</span>
+            <span className="persona-preview-badge">Local concept studio</span>
             <button type="button" className="persona-close" onClick={onClose} aria-label="Close Atlas Persona">
               <X size={18} />
             </button>
@@ -229,8 +229,8 @@ export const AtlasPersonaModal = ({
             <div className="persona-section-heading persona-brief-heading">
               <span>02</span>
               <div>
-                <h3>Your AI-ready art brief</h3>
-                <p>Grounded in your memories, never a generic travel aesthetic.</p>
+                <h3>Your portable art brief</h3>
+                <p>Built locally from your memories, ready to use with any creative tool you prefer.</p>
               </div>
             </div>
 
@@ -244,7 +244,7 @@ export const AtlasPersonaModal = ({
 
             <div className="persona-honesty-note">
               <LockKeyhole size={15} />
-              <p><strong>Concept mode:</strong> this presentation preview does not generate, upload or replace your photo. Live creation can be connected after image storage is enabled.</p>
+              <p><strong>Private concept mode:</strong> the brief is created on this device. GeoJournal does not upload your memories or replace your photo.</p>
             </div>
           </div>
         </div>

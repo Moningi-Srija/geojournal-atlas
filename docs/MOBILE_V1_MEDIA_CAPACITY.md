@@ -26,7 +26,7 @@ Official references:
 
 Firestore provides one no-cost database per project with 1 GiB stored, 50,000 reads/day, 20,000 writes/day, 20,000 deletes/day, and 10 GiB outbound/month. Authentication account count is not the immediate constraint; reads and media transfer are.
 
-The V1 queries now filter and cap each Atlas request at 100 documents instead of downloading the entire public collection. A conservative closed-beta target is **100–500 daily active users**, depending on how often each person opens feeds, profiles, and maps. Monitor real reads and transfer before raising that target.
+The V1 queries now filter and cap each Atlas request at 100 documents instead of downloading the entire public collection. With the current inline-photo model, start with a **25–100 daily-active-user closed beta** and monitor transfer closely; photo-heavy feeds can hit outbound limits before read limits. After the Storage/thumbnail migration, roughly **500–1,000 daily active users** can fit the free Firestore read allowance when usage averages about 50–100 document reads per person per day.
 
 | Architecture | Practical planning estimate |
 | --- | ---: |

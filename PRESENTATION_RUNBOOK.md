@@ -129,7 +129,7 @@ Google Timeline is increasingly stored on the user’s device, so do not promise
 
 1. Open **Google Maps**.
 2. Tap the profile picture or initial.
-3. Open **Settings → Personal content → Export Timeline data**.
+3. Open **Settings → Location & Privacy → Export Timeline data**.
 4. Save the JSON to **Files**.
 5. In GeoJournal, open **Memories → Sync → Google Timeline → Choose JSON file**.
 
@@ -140,7 +140,18 @@ Google Timeline is increasingly stored on the user’s device, so do not promise
 3. Choose **Export Timeline data** and save the JSON.
 4. In GeoJournal, open **Memories → Sync → Google Timeline → Choose JSON file**.
 
-Labels can vary by Android manufacturer and Google Maps version. GeoJournal accepts common current files such as `location-history.json` or `Timeline.json`, plus the older `Records.json`. If the export option is missing, check that Maps and Google Play services are updated and that Timeline is enabled for the intended Google account.
+Labels can vary by Android manufacturer and Google Maps version. Google officially names the iPhone/iPad export `location-history.json`; the Android filename is not guaranteed. GeoJournal also supports the older `Records.json` and Semantic Location History JSON formats after the archive is extracted. If the export option is missing, check that Maps and Google Play services are updated and that Timeline is enabled for the intended Google account.
+
+## Instagram export instructions
+
+1. Open **Instagram Settings → Accounts Center → Your information and permissions**.
+2. Choose **Export your information → Create export**.
+3. Select the Instagram profile, then **Export to device**.
+4. Select posts and reels, **All time**, and **JSON**, then start the export.
+5. When Meta says it is ready, download and extract the ZIP.
+6. In GeoJournal, open **Memories → Sync → Instagram** and choose the relevant posts or reels JSON file.
+
+Meta does not guarantee that an exported post's visible place tag will include coordinates. Demo wording must remain: “When Instagram includes location data, GeoJournal maps it automatically; locationless items need user confirmation.” This is export-file import, not credential access or scraping. Full technical and privacy notes are in `docs/IMPORTING_TRAVEL_HISTORY.md`.
 
 ## Top-10 judge Q&A
 

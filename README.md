@@ -39,8 +39,11 @@ Create `.env.local` only for services you want to enable. The presentation demo 
 ## Build and verify
 
 ```bash
+npm run test:import
 npm run build
 npm run lint
 ```
 
 Built by **Srija Moningi** for the Antler × Dodo Payments Crackathon.
+
+Current, privacy-first export steps and format limitations are documented in [Importing travel history](docs/IMPORTING_TRAVEL_HISTORY.md).

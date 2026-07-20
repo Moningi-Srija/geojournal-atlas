@@ -4,6 +4,7 @@ import {
   Camera,
   Check,
   CheckCircle2,
+  ExternalLink,
   Inbox,
   Loader2,
   LockKeyhole,
@@ -16,28 +17,18 @@ import {
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { importPinsInBatches } from '../utils/firestore';
-import type { EntryCategory, JournalEntry } from '../types';
+import {
+  dedupeImportCandidates,
+  extractGoogleTimelineRecords,
+  extractInstagramRecords,
+  normaliseInstagramPost,
+  normaliseTakeoutLocation,
+  type ParsedImportCandidate,
+  type TakeoutRecord,
+} from '../utils/importParsers';
+import type { JournalEntry } from '../types';
 
-type ImportSource = 'google-timeline' | 'instagram';
 type CandidateDecision = 'pending' | 'accepted' | 'rejected';
-
-interface ParsedImportCandidate {
-  id: string;
-  source: ImportSource;
-  lat: number;
-  lng: number;
-  date: number;
-  locationName: string;
-  category: EntryCategory;
-  country?: string;
-  accuracy?: number;
-  title?: string;
-  caption?: string;
-  mediaUrl?: string;
-  sourceUrl?: string;
-}
-
-type TakeoutRecord = Record<string, unknown>;
 
 const PREVIEW_LIMIT = 200;
 const DEMO_TAKEOUT_RECORDS: TakeoutRecord[] = [
@@ -90,319 +81,6 @@ const DEMO_INSTAGRAM_POSTS: TakeoutRecord[] = [
   { id: 'ig_bali', caption: 'Rice terraces, temple bells, and a much slower pace.', timestamp: '2024-05-24T08:05:00Z', location: { name: 'Tegallalang, Bali', latitude: -8.4312, longitude: 115.2793, country: 'Indonesia' }, category: 'nature', media_url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=500&auto=format&fit=crop' },
   { id: 'ig_goa', caption: 'Golden hour, salt in the air, no plans after sunset.', timestamp: '2023-12-29T12:25:00Z', location: { name: 'Palolem Beach, Goa', latitude: 15.0099, longitude: 74.0232, country: 'India' }, category: 'beach', media_url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=500&auto=format&fit=crop' },
 ];
-const VALID_CATEGORIES = new Set<EntryCategory>([
-  'trek', 'beach', 'city', 'nature', 'food', 'culture', 'general',
-]);
-
-const finiteNumber = (value: unknown) => {
-  const parsed = typeof value === 'string' ? Number(value) : value;
-  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : null;
-};
-
-const stringValue = (...values: unknown[]) =>
-  values.find((value) => typeof value === 'string' && value.trim())?.toString().trim() ?? '';
-
-const parseGeoPoint = (value: unknown) => {
-  if (typeof value !== 'string') return null;
-  const match = value.match(/(?:geo:)?\s*(-?\d+(?:\.\d+)?)\s*°?\s*,\s*(-?\d+(?:\.\d+)?)\s*°?/i);
-  if (!match) return null;
-  const lat = Number(match[1]);
-  const lng = Number(match[2]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return null;
-  }
-  return { lat, lng };
-};
-
-const recordFromGeoPoint = (
-  point: unknown,
-  base: TakeoutRecord,
-): TakeoutRecord | null => {
-  const coordinates = parseGeoPoint(point);
-  return coordinates ? { ...base, latitude: coordinates.lat, longitude: coordinates.lng } : null;
-};
-
-const extractGoogleTimelineRecords = (data: unknown): TakeoutRecord[] | undefined => {
-  if (Array.isArray(data)) {
-    return data.filter((item): item is TakeoutRecord => Boolean(item && typeof item === 'object'));
-  }
-  if (!data || typeof data !== 'object') return undefined;
-
-  const container = data as Record<string, unknown>;
-  if (Array.isArray(container.locations)) {
-    return container.locations.filter(
-      (item): item is TakeoutRecord => Boolean(item && typeof item === 'object'),
-    );
-  }
-
-  if (Array.isArray(container.semanticSegments)) {
-    return container.semanticSegments.flatMap((rawSegment) => {
-      if (!rawSegment || typeof rawSegment !== 'object') return [];
-      const segment = rawSegment as TakeoutRecord;
-      const base: TakeoutRecord = {
-        startTime: segment.startTime,
-        timestamp: segment.startTime,
-        activity: segment.activity,
-      };
-      const visit = segment.visit && typeof segment.visit === 'object'
-        ? segment.visit as TakeoutRecord
-        : {};
-      const candidate = visit.topCandidate && typeof visit.topCandidate === 'object'
-        ? visit.topCandidate as TakeoutRecord
-        : {};
-      const placeLocation = candidate.placeLocation && typeof candidate.placeLocation === 'object'
-        ? candidate.placeLocation as TakeoutRecord
-        : {};
-      const visitPoint = stringValue(
-        placeLocation.latLng,
-        candidate.placeLocation,
-        visit.location,
-      );
-      const visitRecord = recordFromGeoPoint(visitPoint, {
-        ...base,
-        locationName: stringValue(candidate.placeName, candidate.name, visit.placeName),
-        semanticType: stringValue(candidate.semanticType, visit.semanticType),
-        placeId: stringValue(candidate.placeId, visit.placeId),
-      });
-      if (visitRecord) return [visitRecord];
-
-      const timelinePath = Array.isArray(segment.timelinePath)
-        ? segment.timelinePath.filter(
-            (item): item is TakeoutRecord => Boolean(item && typeof item === 'object'),
-          )
-        : [];
-      if (timelinePath.length > 0) {
-        const indexes = [...new Set([0, Math.floor(timelinePath.length / 2), timelinePath.length - 1])];
-        return indexes
-          .map((index) => {
-            const pathPoint = timelinePath[index];
-            return recordFromGeoPoint(pathPoint.point, {
-              ...base,
-              timestamp: pathPoint.time ?? segment.startTime,
-              locationName: 'Timeline route point',
-              semanticType: 'route',
-            });
-          })
-          .filter((record): record is TakeoutRecord => record !== null);
-      }
-
-      const activity = segment.activity && typeof segment.activity === 'object'
-        ? segment.activity as TakeoutRecord
-        : {};
-      return [
-        recordFromGeoPoint(activity.start, { ...base, locationName: 'Trip start' }),
-        recordFromGeoPoint(activity.end, { ...base, timestamp: segment.endTime, locationName: 'Trip end' }),
-      ].filter((record): record is TakeoutRecord => record !== null);
-    });
-  }
-
-  if (Array.isArray(container.timelineObjects)) {
-    return container.timelineObjects.flatMap((rawObject) => {
-      if (!rawObject || typeof rawObject !== 'object') return [];
-      const timelineObject = rawObject as TakeoutRecord;
-      const placeVisit = timelineObject.placeVisit && typeof timelineObject.placeVisit === 'object'
-        ? timelineObject.placeVisit as TakeoutRecord
-        : {};
-      const location = placeVisit.location && typeof placeVisit.location === 'object'
-        ? placeVisit.location as TakeoutRecord
-        : {};
-      if (Object.keys(location).length > 0) {
-        return [{
-          ...location,
-          startTime: placeVisit.duration && typeof placeVisit.duration === 'object'
-            ? (placeVisit.duration as TakeoutRecord).startTimestamp
-            : undefined,
-          locationName: stringValue(location.name, location.address),
-        }];
-      }
-
-      const activitySegment = timelineObject.activitySegment && typeof timelineObject.activitySegment === 'object'
-        ? timelineObject.activitySegment as TakeoutRecord
-        : {};
-      const startLocation = activitySegment.startLocation && typeof activitySegment.startLocation === 'object'
-        ? activitySegment.startLocation as TakeoutRecord
-        : {};
-      const endLocation = activitySegment.endLocation && typeof activitySegment.endLocation === 'object'
-        ? activitySegment.endLocation as TakeoutRecord
-        : {};
-      return [startLocation, endLocation]
-        .filter((record) => Object.keys(record).length > 0)
-        .map((record, index) => ({
-          ...record,
-          locationName: index === 0 ? 'Trip start' : 'Trip end',
-        }));
-    });
-  }
-
-  return undefined;
-};
-
-const inferCategory = (record: TakeoutRecord, locationName: string): EntryCategory => {
-  const explicit = stringValue(record.category).toLowerCase() as EntryCategory;
-  if (VALID_CATEGORIES.has(explicit)) return explicit;
-
-  const activityText = JSON.stringify(record.activity ?? '').toLowerCase();
-  const text = `${locationName} ${stringValue(record.semanticType)} ${activityText}`.toLowerCase();
-  if (/beach|ocean|sea|coast|shore/.test(text)) return 'beach';
-  if (/trek|hike|trail|mountain|climb|walking|running/.test(text)) return 'trek';
-  if (/forest|park|nature|camp|wildlife|lake|waterfall/.test(text)) return 'nature';
-  if (/restaurant|cafe|food|bakery|dinner|lunch/.test(text)) return 'food';
-  if (/museum|temple|church|monument|heritage|gallery|culture/.test(text)) return 'culture';
-  if (/city|town|airport|station|downtown|urban/.test(text)) return 'city';
-  return 'general';
-};
-
-const parseTimestamp = (record: TakeoutRecord) => {
-  const millis = finiteNumber(record.timestampMs ?? record.startTimestampMs);
-  if (millis !== null) return millis;
-  const iso = stringValue(record.timestamp, record.startTime);
-  const parsed = iso ? Date.parse(iso) : NaN;
-  return Number.isFinite(parsed) ? parsed : Date.now();
-};
-
-const normaliseTakeoutLocation = (
-  record: TakeoutRecord,
-  index: number,
-): ParsedImportCandidate | null => {
-  const nestedLocation =
-    record.location && typeof record.location === 'object'
-      ? record.location as TakeoutRecord
-      : {};
-  const latitudeE7 = finiteNumber(record.latitudeE7 ?? nestedLocation.latitudeE7);
-  const longitudeE7 = finiteNumber(record.longitudeE7 ?? nestedLocation.longitudeE7);
-  const lat = latitudeE7 !== null
-    ? latitudeE7 / 1e7
-    : finiteNumber(record.latitude ?? record.lat ?? nestedLocation.latitude);
-  const lng = longitudeE7 !== null
-    ? longitudeE7 / 1e7
-    : finiteNumber(record.longitude ?? record.lng ?? nestedLocation.longitude);
-
-  if (lat === null || lng === null || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return null;
-  }
-
-  const date = parseTimestamp(record);
-  const address = stringValue(record.address, nestedLocation.address);
-  const explicitName = stringValue(
-    record.locationName,
-    record.name,
-    record.placeName,
-    nestedLocation.name,
-  );
-  const locationName = explicitName || address || `Timeline point · ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  const explicitCountry = stringValue(
-    record.country,
-    record.countryCode,
-    nestedLocation.country,
-    nestedLocation.countryCode,
-  );
-  const addressCountry = address.includes(',') ? address.split(',').at(-1)?.trim() ?? '' : '';
-  const country = explicitCountry || (/^[\p{L} .'-]{2,56}$/u.test(addressCountry) ? addressCountry : '');
-  const sourceLat = Math.round((lat + 90) * 1e7);
-  const sourceLng = Math.round((lng + 180) * 1e7);
-
-  return {
-    id: `takeout_${Math.round(date)}_${sourceLat}_${sourceLng}_${index}`,
-    source: 'google-timeline',
-    lat,
-    lng,
-    date,
-    locationName,
-    category: inferCategory(record, locationName),
-    country: country || undefined,
-    accuracy: finiteNumber(record.accuracy) ?? undefined,
-  };
-};
-
-const normaliseInstagramPost = (
-  record: TakeoutRecord,
-  index: number,
-): ParsedImportCandidate | null => {
-  const firstMedia = Array.isArray(record.media) && record.media[0] && typeof record.media[0] === 'object'
-    ? record.media[0] as TakeoutRecord
-    : record.media && typeof record.media === 'object'
-      ? record.media as TakeoutRecord
-      : {};
-  const location = record.location && typeof record.location === 'object'
-    ? record.location as TakeoutRecord
-    : firstMedia.location && typeof firstMedia.location === 'object'
-      ? firstMedia.location as TakeoutRecord
-      : record.place && typeof record.place === 'object'
-        ? record.place as TakeoutRecord
-        : {};
-  const coordinates = location.coordinates && typeof location.coordinates === 'object'
-    ? location.coordinates as TakeoutRecord
-    : {};
-  const lat = finiteNumber(
-    record.latitude ?? record.lat ?? location.latitude ?? location.lat ?? coordinates.latitude ?? coordinates.lat,
-  );
-  const lng = finiteNumber(
-    record.longitude ?? record.lng ?? location.longitude ?? location.lng ?? coordinates.longitude ?? coordinates.lng,
-  );
-
-  if (lat === null || lng === null || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return null;
-  }
-
-  const rawCreatedAt = finiteNumber(record.creation_timestamp ?? firstMedia.creation_timestamp);
-  const date = rawCreatedAt !== null
-    ? rawCreatedAt < 1e12 ? rawCreatedAt * 1000 : rawCreatedAt
-    : parseTimestamp({
-        ...record,
-        timestamp: record.timestamp ?? firstMedia.timestamp,
-      });
-  const caption = stringValue(
-    record.caption,
-    record.title,
-    record.description,
-    firstMedia.caption,
-    firstMedia.title,
-  );
-  const locationName = stringValue(
-    record.locationName,
-    record.placeName,
-    location.name,
-    location.title,
-    firstMedia.locationName,
-  ) || `Instagram geotag · ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  const country = stringValue(record.country, location.country, location.countryCode);
-  const mediaUrl = stringValue(
-    record.media_url,
-    record.thumbnail_url,
-    firstMedia.media_url,
-    firstMedia.thumbnail_url,
-    firstMedia.uri,
-  );
-  const safeMediaUrl = /^(https?:\/\/|data:image\/)/i.test(mediaUrl) ? mediaUrl : '';
-  const sourceUrl = stringValue(record.permalink, record.url, firstMedia.permalink);
-  const explicitId = stringValue(record.id, firstMedia.id, record.shortcode);
-  const title = caption.split(/[.!?\n]/)[0]?.trim().slice(0, 72) || locationName;
-
-  return {
-    id: `instagram_${explicitId || `${Math.round(date)}_${index}`}`,
-    source: 'instagram',
-    lat,
-    lng,
-    date,
-    locationName,
-    category: inferCategory(record, `${locationName} ${caption}`),
-    country: country || undefined,
-    title,
-    caption: caption || undefined,
-    mediaUrl: safeMediaUrl || undefined,
-    sourceUrl: /^https?:\/\//i.test(sourceUrl) ? sourceUrl : undefined,
-  };
-};
-
-const extractInstagramRecords = (data: unknown): unknown[] | undefined => {
-  if (Array.isArray(data)) return data;
-  if (!data || typeof data !== 'object') return undefined;
-
-  const container = data as Record<string, unknown>;
-  return [container.posts, container.media, container.items, container.content, container.your_posts]
-    .find((value): value is unknown[] => Array.isArray(value));
-};
-
 interface ImportDataModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -434,6 +112,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   const [decisions, setDecisions] = useState<Record<string, CandidateDecision>>({});
   const [completedCount, setCompletedCount] = useState(0);
   const [invalidCount, setInvalidCount] = useState(0);
+  const [duplicateCount, setDuplicateCount] = useState(0);
 
   if (!isOpen) return null;
 
@@ -445,40 +124,51 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
     setProgress(0);
     setCompletedCount(0);
     setInvalidCount(0);
+    setDuplicateCount(0);
   };
 
-  const processFile = async (file: File) => {
+  const closeAndReset = () => {
+    resetState();
+    onClose();
+  };
+
+  const processGoogleFiles = async (files: File[]) => {
     resetState();
     setLoading(true);
 
     try {
-      const text = await file.text();
-      let data: unknown;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error('Invalid JSON file. Please upload your Google Takeout Records.json file.');
+      const locations: TakeoutRecord[] = [];
+      for (const file of files) {
+        const text = await file.text();
+        let data: unknown;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(`${file.name} is not readable JSON. Upload extracted Timeline JSON, not a ZIP, TGZ, or encrypted backup.`);
+        }
+
+        const extracted = extractGoogleTimelineRecords(data);
+        if (!Array.isArray(extracted) || extracted.length === 0) {
+          throw new Error(`${file.name} does not contain a supported Timeline structure. Try the current device export or an extracted legacy Records.json file.`);
+        }
+        locations.push(...extracted);
       }
 
-      const locations = extractGoogleTimelineRecords(data);
-      if (!Array.isArray(locations) || locations.length === 0) {
-        throw new Error('No supported Google Timeline records were found. Try location-history.json, Timeline.json, or the older Records.json export.');
-      }
-
-      const parsed = locations
+      const normalised = locations
         .map((location, index) =>
           location && typeof location === 'object'
             ? normaliseTakeoutLocation(location as TakeoutRecord, index)
             : null,
         )
-        .filter((location): location is ParsedImportCandidate => location !== null)
-        .sort((a, b) => b.date - a.date);
+        .filter((location): location is ParsedImportCandidate => location !== null);
+      const parsed = dedupeImportCandidates(normalised).sort((a, b) => b.date - a.date);
 
       if (parsed.length === 0) {
-        throw new Error('No valid coordinates were found in this location history file.');
+        throw new Error('Timeline data was recognized, but no records had both a usable date and valid coordinates.');
       }
 
-      setInvalidCount(locations.length - parsed.length);
+      setInvalidCount(locations.length - normalised.length);
+      setDuplicateCount(normalised.length - parsed.length);
       setParsedLocations(parsed);
       setDecisions({});
     } catch (caught) {
@@ -490,53 +180,58 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) void processFile(file);
+    const files = Array.from(event.target.files ?? []);
+    if (files.length > 0) void processGoogleFiles(files);
   };
 
   const loadDemoSample = () => {
     resetState();
     const deviceRecords = extractGoogleTimelineRecords(DEMO_DEVICE_TIMELINE) ?? [];
-    const parsed = [...deviceRecords, ...DEMO_TAKEOUT_RECORDS]
+    const normalised = [...deviceRecords, ...DEMO_TAKEOUT_RECORDS]
       .map((record, index) => normaliseTakeoutLocation(record, index))
-      .filter((location): location is ParsedImportCandidate => location !== null)
-      .sort((a, b) => b.date - a.date);
+      .filter((location): location is ParsedImportCandidate => location !== null);
+    const parsed = dedupeImportCandidates(normalised).sort((a, b) => b.date - a.date);
     setParsedLocations(parsed);
     setDecisions({});
   };
 
-  const processInstagramFile = async (file: File) => {
+  const processInstagramFiles = async (files: File[]) => {
     resetState();
     setLoading(true);
 
     try {
-      const text = await file.text();
-      let data: unknown;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error('Invalid JSON file. Export your Instagram information in JSON format.');
+      const records: TakeoutRecord[] = [];
+      for (const file of files) {
+        const text = await file.text();
+        let data: unknown;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(`${file.name} is not readable JSON. Export Instagram information as JSON and extract the ZIP first.`);
+        }
+
+        const extracted = extractInstagramRecords(data);
+        if (!extracted || extracted.length === 0) {
+          throw new Error(`${file.name} does not contain recognized Instagram posts or reels.`);
+        }
+        records.push(...extracted);
       }
 
-      const records = extractInstagramRecords(data);
-      if (!records || records.length === 0) {
-        throw new Error('No Instagram post records were found in this JSON file.');
-      }
-
-      const parsed = records
+      const normalised = records
         .map((record, index) =>
           record && typeof record === 'object'
             ? normaliseInstagramPost(record as TakeoutRecord, index)
             : null,
         )
-        .filter((location): location is ParsedImportCandidate => location !== null)
-        .sort((a, b) => b.date - a.date);
+        .filter((location): location is ParsedImportCandidate => location !== null);
+      const parsed = dedupeImportCandidates(normalised).sort((a, b) => b.date - a.date);
 
       if (parsed.length === 0) {
-        throw new Error('No posts with usable geotag coordinates were found. Posts without locations were skipped.');
+        throw new Error('Posts were found, but Meta did not include usable coordinates and dates in this JSON. Instagram does not guarantee coordinates for visible place tags.');
       }
 
-      setInvalidCount(records.length - parsed.length);
+      setInvalidCount(records.length - normalised.length);
+      setDuplicateCount(normalised.length - parsed.length);
       setParsedLocations(parsed);
       setDecisions({});
     } catch (caught) {
@@ -548,16 +243,16 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   };
 
   const handleInstagramFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) void processInstagramFile(file);
+    const files = Array.from(event.target.files ?? []);
+    if (files.length > 0) void processInstagramFiles(files);
   };
 
   const loadInstagramDemoSample = () => {
     resetState();
-    const parsed = DEMO_INSTAGRAM_POSTS
+    const normalised = DEMO_INSTAGRAM_POSTS
       .map((record, index) => normaliseInstagramPost(record, index))
-      .filter((location): location is ParsedImportCandidate => location !== null)
-      .sort((a, b) => b.date - a.date);
+      .filter((location): location is ParsedImportCandidate => location !== null);
+    const parsed = dedupeImportCandidates(normalised).sort((a, b) => b.date - a.date);
     setParsedLocations(parsed);
     setDecisions({});
   };
@@ -649,7 +344,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   const activeStep = success ? 3 : parsedLocations.length > 0 ? 2 : 1;
 
   return (
-    <div className="import-overlay" onClick={onClose}>
+    <div className="import-overlay" onClick={closeAndReset}>
       <section
         className="import-dialog"
         role="dialog"
@@ -670,7 +365,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                 : 'Choose an export. GeoJournal will prepare suggestions, never publish them automatically.'}
             </p>
           </div>
-          <button className="import-close" type="button" onClick={onClose} aria-label="Close memory import">
+          <button className="import-close" type="button" onClick={closeAndReset} aria-label="Close memory import">
             <X size={19} aria-hidden="true" />
           </button>
         </header>
@@ -724,6 +419,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
               </div>
             </div>
           ) : (
+            <>
             <div className="import-source-grid">
               <div
                 className={`import-source-card import-source-timeline ${isHovering ? 'import-source-hovering' : ''}`}
@@ -738,8 +434,8 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                 onDrop={(event) => {
                   event.preventDefault();
                   setIsHovering(false);
-                  const file = event.dataTransfer.files?.[0];
-                  if (file) void processFile(file);
+                  const files = Array.from(event.dataTransfer.files ?? []);
+                  if (files.length > 0) void processGoogleFiles(files);
                 }}
                 onClick={() => fileInputRef.current?.click()}
                 onKeyDown={(event) => {
@@ -752,7 +448,8 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                 <input
                   className="import-file-input"
                   type="file"
-                  accept=".json"
+                  accept=".json,application/json"
+                  multiple
                   ref={fileInputRef}
                   onChange={handleFileUpload}
                 />
@@ -761,8 +458,8 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                   <span className="import-source-tag">Timeline export</span>
                 </div>
                 <h3>Google Timeline</h3>
-                <p>Drop location-history.json, Timeline.json, or the older Records.json export.</p>
-                <span className="import-source-upload"><UploadCloud size={15} aria-hidden="true" /> Choose JSON file</span>
+                <p>Upload the current device Timeline JSON. Extracted legacy Records.json is supported too.</p>
+                <span className="import-source-upload"><UploadCloud size={15} aria-hidden="true" /> Choose JSON file(s)</span>
                 <button
                   type="button"
                   className="import-demo-button"
@@ -784,8 +481,8 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => {
                   event.preventDefault();
-                  const file = event.dataTransfer.files?.[0];
-                  if (file) void processInstagramFile(file);
+                  const files = Array.from(event.dataTransfer.files ?? []);
+                  if (files.length > 0) void processInstagramFiles(files);
                 }}
                 onKeyDown={(event) => {
                   if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
@@ -798,6 +495,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                   className="import-file-input"
                   type="file"
                   accept=".json,application/json"
+                  multiple
                   ref={instagramFileInputRef}
                   onChange={handleInstagramFileUpload}
                 />
@@ -806,8 +504,8 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                   <span className="import-source-tag">Posts export</span>
                 </div>
                 <h3>Instagram geotags</h3>
-                <p>Upload posts JSON from Accounts Center. Only posts with usable geotags are suggested.</p>
-                <span className="import-source-upload"><UploadCloud size={15} aria-hidden="true" /> Choose JSON file</span>
+                <p>Extract the Meta ZIP, then upload posts or reels JSON. We map items only when coordinates and dates exist.</p>
+                <span className="import-source-upload"><UploadCloud size={15} aria-hidden="true" /> Choose JSON file(s)</span>
                 <button
                   type="button"
                   className="import-demo-button"
@@ -818,9 +516,32 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                 >
                   Use demo Instagram sample
                 </button>
-                <span className="import-source-roadmap">Direct account connection planned for V2</span>
+                <span className="import-source-roadmap">ZIP import + missing-location review planned next</span>
               </div>
             </div>
+            <div className="import-export-help" aria-label="Official export instructions">
+              <details>
+                <summary>How to export Google Timeline</summary>
+                <div>
+                  <p><strong>Android:</strong> Settings → Location → Location services → Timeline → Export Timeline data.</p>
+                  <p><strong>iPhone/iPad:</strong> Google Maps → profile → Settings → Location &amp; Privacy → Export Timeline data → Save to Files.</p>
+                  <a href="https://support.google.com/maps/answer/6258979" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+                    Official Google guide <ExternalLink size={12} aria-hidden="true" />
+                  </a>
+                </div>
+              </details>
+              <details>
+                <summary>How to export Instagram</summary>
+                <div>
+                  <p>Instagram Settings → Accounts Center → Your information and permissions → Export your information → Create export.</p>
+                  <p>Choose the profile, Export to device, posts/reels, All time, and JSON. Download and extract the ZIP before choosing a JSON file here.</p>
+                  <a href="https://www.facebook.com/help/instagram/181231772500920" target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+                    Official Meta guide <ExternalLink size={12} aria-hidden="true" />
+                  </a>
+                </div>
+              </details>
+            </div>
+            </>
           )
         ) : (
           <div className="import-review">
@@ -850,7 +571,8 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                 </button>
               </div>
               <p className="import-review-note">
-                {invalidCount > 0 && `${invalidCount} records without usable coordinates were skipped. `}
+                {invalidCount > 0 && `${invalidCount} records without both a usable date and coordinates were skipped. `}
+                {duplicateCount > 0 && `${duplicateCount} duplicate ${duplicateCount === 1 ? 'suggestion was' : 'suggestions were'} merged. `}
                 {parsedLocations.length > PREVIEW_LIMIT
                   ? `Showing the newest ${PREVIEW_LIMIT}; bulk actions apply to all ${parsedLocations.length}.`
                   : 'Every usable suggestion is shown below.'}
@@ -940,8 +662,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                   type="button"
                   className="import-primary-button"
                   onClick={() => {
-                    onClose();
-                    resetState();
+                    closeAndReset();
                   }}
                 >
                   <CheckCircle2 size={16} aria-hidden="true" /> Done

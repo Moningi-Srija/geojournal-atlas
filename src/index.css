@@ -5451,6 +5451,49 @@ dialog.glass-panel {
   text-align: center;
 }
 
+.import-export-help {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.import-export-help details {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 12px;
+  background: rgba(1, 7, 11, 0.3);
+}
+
+.import-export-help summary {
+  padding: 9px 11px;
+  color: var(--text-2);
+  font-size: 0.66rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.import-export-help details > div {
+  display: grid;
+  gap: 6px;
+  padding: 0 11px 11px;
+  color: var(--text-3);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.import-export-help p { margin: 0; }
+.import-export-help strong { color: var(--text-2); }
+.import-export-help a {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 5px;
+  color: var(--atlas);
+  text-decoration: none;
+}
+.import-export-help a:hover { text-decoration: underline; }
+
 .import-parsing {
   display: flex;
   min-height: 250px;
@@ -5724,6 +5767,7 @@ dialog.glass-panel {
   .import-dialog { padding: 21px; }
   .import-source-grid { grid-template-columns: 1fr; }
   .import-source-card { min-height: 230px; }
+  .import-export-help { grid-template-columns: 1fr; }
   .import-review-header,
   .import-review-toolbar { align-items: flex-start; flex-direction: column; }
   .import-statuses { justify-content: flex-start; }

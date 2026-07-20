@@ -19,6 +19,26 @@ GeoJournal turns scattered travel history into a living Atlas you can search, re
 - GeoJournal Pro pricing and Dodo-hosted Test Mode checkout
 - Clearly labelled Expeditions and Atlas Market product previews
 
+## Preserved AI-showcase checkpoint
+
+The complete AI-assisted Crackathon version is permanently preserved at Git tag **[`v0.1-ai-showcase`](https://github.com/Moningi-Srija/geojournal-atlas/tree/v0.1-ai-showcase)**, pointing to commit **[`62e98a3`](https://github.com/Moningi-Srija/geojournal-atlas/commit/62e98a3)**. Everything implemented through that commit remains recoverable even if the main product is later simplified for its first mobile release.
+
+That checkpoint contains the full AI-assistant feature set built so far:
+
+- Nexus conversational travel copilot with Atlas-memory context
+- Meaning-aware memory search with a configurable OpenAI path
+- Trip Fit planning using imported calendar events, leave, budget, month, and preferences
+- Memory rediscovery and Atlas Persona recommendations
+- Presentation-safe local search and copilot fallbacks when no API key is configured
+
+To inspect it without changing the current branch:
+
+```bash
+git switch --detach v0.1-ai-showcase
+```
+
+The Maximem private server bridge remains a separately labelled roadmap item; this checkpoint does not claim that private browser memories are already sent to Maximem.
+
 ## Technology
 
 - React 19, TypeScript, and Vite
